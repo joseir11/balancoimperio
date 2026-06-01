@@ -115,8 +115,8 @@
     <div class="w-full max-w-3xl mx-auto">
         <!-- Tela de login -->
         <div id="loginArea" class="card-app p-8">
-            <h1 class="text-3xl font-black mb-2 text-center text-indigo-600">Balanço Império</h1>
-            <p class="text-center text-slate-500 mb-8">Acesso das equipes</p>
+            <h1 class="text-3xl font-black mb-2 text-center text-indigo-600">BALANÇO IMPÉRIO</h1>
+            <p class="text-center text-slate-500 mb-8">ACESSO EQUIP</p>
             <input type="password" id="senha" placeholder="Digite a senha da equipe" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400">
             <button onclick="fazerLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-4 rounded-xl shadow-md">ENTRAR</button>
         </div>
@@ -183,7 +183,7 @@
                     EQUIPE = json.dados.equipe;
                     document.getElementById('loginArea').classList.add('hidden');
                     document.getElementById('appArea').classList.remove('hidden');
-                    document.getElementById('tituloEquipe').innerText = "Equipe: " + EQUIPE;
+                    document.getElementById('tituloEquipe').innerText = "EQUIPE: " + EQUIPE;
                     await carregarProdutos();
                     await carregarListaContagens();
                 } else {
