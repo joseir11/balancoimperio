@@ -90,14 +90,24 @@
             padding: 0.25rem;
             border-radius: 9999px;
             transition: background 0.2s;
-            line-height: 1;
         }
         .icon-btn:hover {
             background: #e2e8f0;
         }
+        .delete-icon {
+            color: #ef4444;
+        }
         .delete-icon:hover {
             background: #fee2e2;
-            color: #ef4444;
+        }
+        .filter-select {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.875rem;
+            color: #1e293b;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -105,7 +115,7 @@
     <div class="w-full max-w-3xl mx-auto">
         <!-- Tela de login -->
         <div id="loginArea" class="card-app p-8">
-            <h1 class="text-3xl font-black mb-2 text-center text-indigo-600">BALANÇO IMPÉRIO</h1>
+            <h1 class="text-3xl font-black mb-2 text-center text-indigo-600">Balanço Império</h1>
             <p class="text-center text-slate-500 mb-8">Acesso das equipes</p>
             <input type="password" id="senha" placeholder="Digite a senha da equipe" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400">
             <button onclick="fazerLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-4 rounded-xl shadow-md">ENTRAR</button>
@@ -134,13 +144,19 @@
                 <div id="statusMsg" class="mt-4 text-center text-sm font-medium"></div>
             </div>
 
-            <!-- Lista de itens contados pela equipe -->
+            <!-- Lista de itens contados com filtro -->
             <div class="card-app p-6">
-                <div class="flex justify-between items-center mb-4">
+                <div class="flex justify-between items-center flex-wrap gap-3 mb-4">
                     <h2 class="text-xl font-bold text-slate-700">📋 LISTA DE ITENS CONTADOS</h2>
-                    <button onclick="confirmarLimpezaGeral()" class="text-sm bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded-full transition flex items-center gap-1">
-                        🗑️
-                    </button>
+                    <div class="flex gap-2 items-center">
+                        <select id="filtroStatus" class="filter-select" onchange="aplicarFiltroErenderizar()">
+                            <option value="TODOS">🔘 Todos</option>
+                            <option value="OK">🟢 OK</option>
+                            <option value="AGUARDANDO">🟡 Aguardando</option>
+                            <option value="DIVERGENTE">🔴 Divergente</option>
+                        </select>
+                        <button onclick="confirmarLimpezaGeral()" class="icon-btn delete-icon" title="Limpar toda a lista">🗑️</button>
+                    </div>
                 </div>
                 <div id="listaContagens" class="space-y-2 max-h-96 overflow-y-auto">
                     <p class="text-slate-400 text-center py-4">Carregando...</p>
@@ -150,22 +166,18 @@
     </div>
 
     <script>
-        // URL DO SEU WEB APP (substitua pela sua)
-        const URL_API = "https://script.google.com/macros/s/AKfycbwfrpawNmHS0FCJlLPUyg9oo8upX__WHidqpM9Yj98JmZ24WQsX_iIlqzwX6XpCnsfm/exec";
+        const URL_API = "https://script.google.com/macros/s/AKfycbxN1o28ps5ItDFEwrCLA2bWR2uPa-7Tg02VQ5_MyoWz03XCF9q_vBCUcXja8ptnf-QU/exec";
 
         let EQUIPE = "";
         let produtos = [];
-        let contagensAtuais = [];
+        let contagensAtuais = [];      // lista completa sem filtro
+        let contagensFiltradas = [];    // lista após filtro
 
-        // LOGIN
         async function fazerLogin() {
             const senha = document.getElementById('senha').value;
             if(!senha) return alert("Digite a senha");
             try {
-                const res = await fetch(URL_API, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ acao: "login", senha: senha }) 
-                });
+                const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "login", senha: senha }) });
                 const json = await res.json();
                 if(json.dados.autenticado) {
                     EQUIPE = json.dados.equipe;
@@ -182,7 +194,6 @@
             }
         }
 
-        // SAIR
         function logout() {
             EQUIPE = "";
             document.getElementById('loginArea').classList.remove('hidden');
@@ -193,7 +204,6 @@
             document.getElementById('statusMsg').innerHTML = "";
         }
 
-        // CARREGAR PRODUTOS
         async function carregarProdutos() {
             try {
                 const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "getProdutos" }) });
@@ -204,27 +214,35 @@
             }
         }
 
-        // CARREGAR CONTAGENS
         async function carregarListaContagens() {
             try {
                 const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "getContagens", equipe: EQUIPE }) });
                 const json = await res.json();
                 contagensAtuais = json.dados || [];
-                renderizarListaContagens();
+                aplicarFiltroErenderizar();
             } catch (erro) {
                 console.error("Erro ao carregar contagens", erro);
                 document.getElementById('listaContagens').innerHTML = '<p class="text-red-400 text-center py-4">Erro ao carregar lista</p>';
             }
         }
 
-        // RENDERIZAR LISTA COMPACTA
+        function aplicarFiltroErenderizar() {
+            const filtro = document.getElementById('filtroStatus').value;
+            if (filtro === "TODOS") {
+                contagensFiltradas = [...contagensAtuais];
+            } else {
+                contagensFiltradas = contagensAtuais.filter(item => item.status === filtro);
+            }
+            renderizarListaContagens();
+        }
+
         function renderizarListaContagens() {
             const container = document.getElementById('listaContagens');
-            if (!contagensAtuais.length) {
-                container.innerHTML = '<p class="text-slate-400 text-center py-4">Nenhum item contado ainda.</p>';
+            if (!contagensFiltradas.length) {
+                container.innerHTML = '<p class="text-slate-400 text-center py-4">Nenhum item encontrado com esse filtro.</p>';
                 return;
             }
-            container.innerHTML = contagensAtuais.map(item => {
+            container.innerHTML = contagensFiltradas.map(item => {
                 let statusIcon = '';
                 if (item.status === 'OK') statusIcon = '🟢';
                 else if (item.status === 'AGUARDANDO') statusIcon = '🟡';
@@ -248,47 +266,44 @@
             }).join('');
         }
 
-        // EXCLUIR ITEM INDIVIDUAL
         async function excluirItem(codigo) {
-            if (!confirm(`Tem certeza que deseja excluir o item ${codigo} da lista da sua equipe?`)) return;
+            if (!confirm(`Tem certeza que deseja excluir o item ${codigo}?`)) return;
             try {
                 const res = await fetch(URL_API, {
                     method: 'POST',
                     body: JSON.stringify({ acao: "excluirItem", codigo: codigo, equipe: EQUIPE })
                 });
                 const json = await res.json();
-                if (json.dados === "EXCLUIDO") {
+                if (json.status === "sucesso") {
                     alert("Item excluído com sucesso!");
                     await carregarListaContagens();
                 } else {
-                    alert("Erro ao excluir item.");
+                    alert("Erro ao excluir: " + json.mensagem);
                 }
             } catch (erro) {
                 alert("Erro: " + erro.message);
             }
         }
 
-        // LIMPAR TODA A LISTA (APENAS DA EQUIPE)
         async function confirmarLimpezaGeral() {
-            if (!confirm("⚠️ ATENÇÃO: Isso irá apagar TODOS os itens contados pela sua equipe. Esta ação não pode ser desfeita. Deseja continuar?")) return;
+            if (!confirm("ATENÇÃO: Isso vai apagar TODOS os itens contados pela sua equipe. Continuar?")) return;
             try {
                 const res = await fetch(URL_API, {
                     method: 'POST',
-                    body: JSON.stringify({ acao: "limparTudo", equipe: EQUIPE })
+                    body: JSON.stringify({ acao: "limparLista", equipe: EQUIPE })
                 });
                 const json = await res.json();
-                if (json.dados === "LIMPO") {
+                if (json.status === "sucesso") {
                     alert("Lista limpa com sucesso!");
                     await carregarListaContagens();
                 } else {
-                    alert("Erro ao limpar lista.");
+                    alert("Erro ao limpar: " + json.mensagem);
                 }
             } catch (erro) {
                 alert("Erro: " + erro.message);
             }
         }
 
-        // EDITAR: busca o produto pelo código e preenche o card
         function editarContagem(codigo) {
             const produto = produtos.find(p => p.codigo == codigo);
             if (!produto) {
@@ -306,7 +321,6 @@
             document.getElementById('card').scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
-        // FILTRAR DROPDOWN
         function filtrar() {
             const termo = document.getElementById('busca').value.toLowerCase();
             const drop = document.getElementById('dropdown');
@@ -328,7 +342,6 @@
             drop.classList.remove('hidden');
         }
 
-        // SELECIONAR PRODUTO
         function selecionar(cod, desc) {
             document.getElementById('busca').value = desc;
             document.getElementById('dropdown').classList.add('hidden');
@@ -340,7 +353,6 @@
             document.getElementById('statusMsg').innerHTML = "";
         }
 
-        // REGISTRAR / ATUALIZAR
         async function salvar() {
             const cod = document.getElementById('nomeItem').dataset.cod;
             const qtd = document.getElementById('qtd').value;
