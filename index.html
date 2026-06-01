@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Balanço Império</title>
+    <title>BALANÇO IMPÉRIO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .glow-green {
@@ -208,7 +208,7 @@
             }
         }
 
-        // RENDERIZAR LISTA COMPACTA (tabela em linha)
+        // RENDERIZAR LISTA COMPACTA (quantidade junto com status e editar)
         function renderizarListaContagens() {
             const container = document.getElementById('listaContagens');
             if (!contagensAtuais.length) {
@@ -227,10 +227,10 @@
                         <div class="list-item-info">
                             <span class="codigo">${item.codigo}</span>
                             <span class="descricao">${item.descricao || item.codigo}</span>
-                            <span class="quantidade">${item.quantidade}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="status-icon" title="${item.status}">${statusIcon}</span>
+                            <span class="quantidade">${item.quantidade}</span>
                             <button onclick="editarContagem('${item.codigo}')" class="edit-icon" title="Editar">✏️</button>
                         </div>
                     </div>
