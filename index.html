@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Balanço Império</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glow-green {
+            box-shadow: 0 0 0 2px #22c55e, 0 0 15px #22c55e;
+            background-color: #f0fdf4;
+            border-left: 6px solid #22c55e;
+        }
+        .glow-yellow {
+            box-shadow: 0 0 0 2px #eab308, 0 0 15px #eab308;
+            background-color: #fefce8;
+            border-left: 6px solid #eab308;
+        }
+        .glow-red {
+            box-shadow: 0 0 0 2px #ef4444, 0 0 15px #ef4444;
+            background-color: #fef2f2;
+            border-left: 6px solid #ef4444;
+        }
+        body {
+            background: #f1f5f9;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .card-app {
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
+        }
+        input, button {
+            transition: all 0.2s ease;
+        }
+        button:active {
+            transform: scale(0.97);
+        }
+        .dropdown-item:hover {
+            background-color: #eef2ff;
+        }
+        /* Estilo para a lista compacta */
+        .list-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background-color: #f8fafc;
+            border-radius: 0.75rem;
+            border: 1px solid #e2e8f0;
+        }
+        .list-item-info {
+            flex: 2;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+        .codigo {
+            font-weight: 700;
+            color: #1e293b;
+            font-family: monospace;
+            background: #e2e8f0;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+        }
+        .descricao {
+            color: #334155;
+            font-size: 0.9rem;
+            word-break: break-word;
+        }
+        .quantidade {
+            font-weight: 600;
+            color: #0f172a;
+            background: #e6f0ff;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+        }
+        .status-icon {
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+        .edit-icon {
+            cursor: pointer;
+            font-size: 1.25rem;
+            background: transparent;
+            border: none;
+            padding: 0.25rem;
+            border-radius: 9999px;
+            transition: background 0.2s;
+        }
+        .edit-icon:hover {
+            background: #e2e8f0;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-6 flex items-center justify-center">
+    <div class="w-full max-w-3xl mx-auto">
+        <!-- Tela de login -->
+        <div id="loginArea" class="card-app p-8">
+            <h1 class="text-3xl font-black mb-2 text-center text-indigo-600">Balanço Império</h1>
+            <p class="text-center text-slate-500 mb-8">Acesso das equipes</p>
+            <input type="password" id="senha" placeholder="Digite a senha da equipe" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <button onclick="fazerLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-4 rounded-xl shadow-md">ENTRAR</button>
+        </div>
+
+        <!-- Área principal do app -->
+        <div id="appArea" class="hidden space-y-6">
+            <!-- Cabeçalho -->
+            <div class="card-app p-6 flex justify-between items-center">
+                <h1 class="text-2xl font-black text-indigo-600" id="tituloEquipe"></h1>
+                <button onclick="logout()" class="text-sm bg-slate-200 px-4 py-2 rounded-full hover:bg-slate-300 transition">Sair</button>
+            </div>
+
+            <!-- Card de busca/registro -->
+            <div class="card-app p-6">
+                <h2 class="text-xl font-bold text-slate-700 mb-4">🔍 BUSCAR/EDITAR ITEM</h2>
+                <div class="relative">
+                    <input type="text" id="busca" oninput="filtrar()" placeholder="Buscar por código ou descrição..." class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                    <div id="dropdown" class="absolute w-full mt-2 bg-white border border-slate-200 rounded-xl hidden max-h-60 overflow-y-auto z-10 shadow-lg"></div>
+                </div>
+                <div id="card" class="mt-6 p-6 rounded-2xl bg-white border border-slate-200 hidden transition-all duration-300">
+                    <h2 id="nomeItem" class="font-bold mb-4 text-indigo-700 text-lg"></h2>
+                    <input type="number" id="qtd" placeholder="Quantidade contada" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                    <button onclick="salvar()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-4 rounded-xl shadow-md">REGISTRAR / ATUALIZAR</button>
+                </div>
+                <div id="statusMsg" class="mt-4 text-center text-sm font-medium"></div>
+            </div>
+
+            <!-- Lista de itens contados pela equipe (versão compacta) -->
+            <div class="card-app p-6">
+                <h2 class="text-xl font-bold text-slate-700 mb-4">📋 LISTA DE ITENS CONTADOS</h2>
+                <div id="listaContagens" class="space-y-2 max-h-96 overflow-y-auto">
+                    <p class="text-slate-400 text-center py-4">Carregando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URL DO SEU WEB APP (substitua pela sua)
+        const URL_API = "https://script.google.com/macros/s/AKfycby_Y7lSI3ApKcq5dhgi7HFeZaTjtQYjKL7CKx9HXGmXww2Ykf_pckj1X1bjqJhbnmmV/exec";
+
+        let EQUIPE = "";
+        let produtos = [];
+        let contagensAtuais = [];
+
+        // LOGIN
+        async function fazerLogin() {
+            const senha = document.getElementById('senha').value;
+            if(!senha) return alert("Digite a senha");
+            try {
+                const res = await fetch(URL_API, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ acao: "login", senha: senha }) 
+                });
+                const json = await res.json();
+                if(json.dados.autenticado) {
+                    EQUIPE = json.dados.equipe;
+                    document.getElementById('loginArea').classList.add('hidden');
+                    document.getElementById('appArea').classList.remove('hidden');
+                    document.getElementById('tituloEquipe').innerText = "Equipe: " + EQUIPE;
+                    await carregarProdutos();
+                    await carregarListaContagens();
+                } else {
+                    alert("Senha inválida!");
+                }
+            } catch (erro) {
+                alert("Erro de conexão: " + erro.message);
+            }
+        }
+
+        // SAIR
+        function logout() {
+            EQUIPE = "";
+            document.getElementById('loginArea').classList.remove('hidden');
+            document.getElementById('appArea').classList.add('hidden');
+            document.getElementById('senha').value = "";
+            document.getElementById('busca').value = "";
+            document.getElementById('card').classList.add('hidden');
+            document.getElementById('statusMsg').innerHTML = "";
+        }
+
+        // CARREGAR PRODUTOS
+        async function carregarProdutos() {
+            try {
+                const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "getProdutos" }) });
+                const json = await res.json();
+                produtos = json.dados;
+            } catch (erro) {
+                console.error("Erro ao carregar produtos", erro);
+            }
+        }
+
+        // CARREGAR CONTAGENS
+        async function carregarListaContagens() {
+            try {
+                const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "getContagens", equipe: EQUIPE }) });
+                const json = await res.json();
+                contagensAtuais = json.dados || [];
+                renderizarListaContagens();
+            } catch (erro) {
+                console.error("Erro ao carregar contagens", erro);
+                document.getElementById('listaContagens').innerHTML = '<p class="text-red-400 text-center py-4">Erro ao carregar lista</p>';
+            }
+        }
+
+        // RENDERIZAR LISTA COMPACTA (tabela em linha)
+        function renderizarListaContagens() {
+            const container = document.getElementById('listaContagens');
+            if (!contagensAtuais.length) {
+                container.innerHTML = '<p class="text-slate-400 text-center py-4">Nenhum item contado ainda.</p>';
+                return;
+            }
+            container.innerHTML = contagensAtuais.map(item => {
+                let statusIcon = '';
+                if (item.status === 'OK') statusIcon = '🟢';
+                else if (item.status === 'AGUARDANDO') statusIcon = '🟡';
+                else if (item.status === 'DIVERGENTE') statusIcon = '🔴';
+                else statusIcon = '⚪';
+                
+                return `
+                    <div class="list-item-row">
+                        <div class="list-item-info">
+                            <span class="codigo">${item.codigo}</span>
+                            <span class="descricao">${item.descricao || item.codigo}</span>
+                            <span class="quantidade">${item.quantidade}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="status-icon" title="${item.status}">${statusIcon}</span>
+                            <button onclick="editarContagem('${item.codigo}')" class="edit-icon" title="Editar">✏️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // EDITAR: busca o produto pelo código e preenche o card
+        function editarContagem(codigo) {
+            const produto = produtos.find(p => p.codigo == codigo);
+            if (!produto) {
+                alert("Produto não encontrado na lista de produtos");
+                return;
+            }
+            document.getElementById('busca').value = produto.descricao;
+            selecionar(produto.codigo, produto.descricao);
+            const itemAtual = contagensAtuais.find(i => i.codigo == codigo);
+            if (itemAtual) {
+                document.getElementById('qtd').value = itemAtual.quantidade;
+            } else {
+                document.getElementById('qtd').value = '';
+            }
+            document.getElementById('card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // FILTRAR DROPDOWN
+        function filtrar() {
+            const termo = document.getElementById('busca').value.toLowerCase();
+            const drop = document.getElementById('dropdown');
+            if(termo.length < 2) { 
+                drop.classList.add('hidden'); 
+                return; 
+            }
+            const filtrados = produtos.filter(p => 
+                p.codigo.toString().includes(termo) || 
+                p.descricao.toLowerCase().includes(termo)
+            );
+            if(filtrados.length === 0) {
+                drop.innerHTML = `<div class="p-3 text-slate-500">Nenhum produto encontrado</div>`;
+            } else {
+                drop.innerHTML = filtrados.map(p => 
+                    `<div onclick="selecionar('${p.codigo}', '${p.descricao}')" class="p-3 dropdown-item cursor-pointer border-b border-slate-100">${p.codigo} - ${p.descricao}</div>`
+                ).join('');
+            }
+            drop.classList.remove('hidden');
+        }
+
+        // SELECIONAR PRODUTO
+        function selecionar(cod, desc) {
+            document.getElementById('busca').value = desc;
+            document.getElementById('dropdown').classList.add('hidden');
+            document.getElementById('card').classList.remove('hidden');
+            document.getElementById('nomeItem').innerHTML = `<span class="font-mono bg-indigo-50 px-2 py-1 rounded">${cod}</span> - ${desc}`;
+            document.getElementById('nomeItem').dataset.cod = cod;
+            const cardDiv = document.getElementById('card');
+            cardDiv.classList.remove('glow-green', 'glow-yellow', 'glow-red');
+            document.getElementById('statusMsg').innerHTML = "";
+        }
+
+        // REGISTRAR / ATUALIZAR
+        async function salvar() {
+            const cod = document.getElementById('nomeItem').dataset.cod;
+            const qtd = document.getElementById('qtd').value;
+            if(!cod) { alert("Selecione um produto primeiro"); return; }
+            if(qtd === "" || isNaN(qtd) || Number(qtd) < 0) { 
+                alert("Digite uma quantidade válida (0 ou positivo)"); 
+                return; 
+            }
+
+            try {
+                const res = await fetch(URL_API, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ 
+                        acao: "registrar", 
+                        codigo: cod, 
+                        qtd: qtd, 
+                        equipe: EQUIPE 
+                    }) 
+                });
+                const json = await res.json();
+                const status = json.dados;
+
+                const cardDiv = document.getElementById('card');
+                cardDiv.classList.remove('glow-green', 'glow-yellow', 'glow-red');
+
+                let msg = "";
+                if(status === "OK") {
+                    cardDiv.classList.add('glow-green');
+                    msg = "✅ CONTAGEM CONFERE COM OUTRA EQUIPE.";
+                } else if(status === "AGUARDANDO") {
+                    cardDiv.classList.add('glow-yellow');
+                    msg = "🟡 AGUARDANDO CONTAGEM DA OUTRA EQUIPE.";
+                } else if(status === "DIVERGENTE") {
+                    cardDiv.classList.add('glow-red');
+                    msg = "❌ DIVERGÊNCIA DE CONTAGEM.";
+                } else {
+                    msg = "Status: " + status;
+                }
+                document.getElementById('statusMsg').innerHTML = msg;
+                
+                await carregarListaContagens();
+            } catch (erro) {
+                alert("Erro ao salvar: " + erro.message);
+            }
+        }
+    </script>
+</body>
+</html>
