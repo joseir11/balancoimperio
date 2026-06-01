@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>BALANÇO IMPÉRIO</title>
+    <title>Balanço Império</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .glow-green {
@@ -39,7 +39,6 @@
         .dropdown-item:hover {
             background-color: #eef2ff;
         }
-        /* Estilo para a lista compacta */
         .list-item-row {
             display: flex;
             align-items: center;
@@ -83,7 +82,7 @@
             font-size: 1.25rem;
             line-height: 1;
         }
-        .edit-icon {
+        .icon-btn {
             cursor: pointer;
             font-size: 1.25rem;
             background: transparent;
@@ -91,9 +90,14 @@
             padding: 0.25rem;
             border-radius: 9999px;
             transition: background 0.2s;
+            line-height: 1;
         }
-        .edit-icon:hover {
+        .icon-btn:hover {
             background: #e2e8f0;
+        }
+        .delete-icon:hover {
+            background: #fee2e2;
+            color: #ef4444;
         }
     </style>
 </head>
@@ -101,7 +105,7 @@
     <div class="w-full max-w-3xl mx-auto">
         <!-- Tela de login -->
         <div id="loginArea" class="card-app p-8">
-            <h1 class="text-3xl font-black mb-2 text-center text-indigo-600">Balanço Império</h1>
+            <h1 class="text-3xl font-black mb-2 text-center text-indigo-600">BALANÇO IMPÉRIO</h1>
             <p class="text-center text-slate-500 mb-8">Acesso das equipes</p>
             <input type="password" id="senha" placeholder="Digite a senha da equipe" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400">
             <button onclick="fazerLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-4 rounded-xl shadow-md">ENTRAR</button>
@@ -130,9 +134,14 @@
                 <div id="statusMsg" class="mt-4 text-center text-sm font-medium"></div>
             </div>
 
-            <!-- Lista de itens contados pela equipe (versão compacta) -->
+            <!-- Lista de itens contados pela equipe -->
             <div class="card-app p-6">
-                <h2 class="text-xl font-bold text-slate-700 mb-4">📋 LISTA DE ITENS CONTADOS</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-slate-700">📋 LISTA DE ITENS CONTADOS</h2>
+                    <button onclick="confirmarLimpezaGeral()" class="text-sm bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded-full transition flex items-center gap-1">
+                        🗑️ Limpar tudo
+                    </button>
+                </div>
                 <div id="listaContagens" class="space-y-2 max-h-96 overflow-y-auto">
                     <p class="text-slate-400 text-center py-4">Carregando...</p>
                 </div>
@@ -142,7 +151,7 @@
 
     <script>
         // URL DO SEU WEB APP (substitua pela sua)
-        const URL_API = "https://script.google.com/macros/s/AKfycbxN1o28ps5ItDFEwrCLA2bWR2uPa-7Tg02VQ5_MyoWz03XCF9q_vBCUcXja8ptnf-QU/exec";
+        const URL_API = "https://script.google.com/macros/s/AKfycbwfrpawNmHS0FCJlLPUyg9oo8upX__WHidqpM9Yj98JmZ24WQsX_iIlqzwX6XpCnsfm/exec";
 
         let EQUIPE = "";
         let produtos = [];
@@ -208,7 +217,7 @@
             }
         }
 
-        // RENDERIZAR LISTA COMPACTA (quantidade junto com status e editar)
+        // RENDERIZAR LISTA COMPACTA
         function renderizarListaContagens() {
             const container = document.getElementById('listaContagens');
             if (!contagensAtuais.length) {
@@ -231,11 +240,52 @@
                         <div class="flex items-center gap-2">
                             <span class="status-icon" title="${item.status}">${statusIcon}</span>
                             <span class="quantidade">${item.quantidade}</span>
-                            <button onclick="editarContagem('${item.codigo}')" class="edit-icon" title="Editar">✏️</button>
+                            <button onclick="editarContagem('${item.codigo}')" class="icon-btn" title="Editar">✏️</button>
+                            <button onclick="excluirItem('${item.codigo}')" class="icon-btn delete-icon" title="Excluir item">❌</button>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        // EXCLUIR ITEM INDIVIDUAL
+        async function excluirItem(codigo) {
+            if (!confirm(`Tem certeza que deseja excluir o item ${codigo} da lista da sua equipe?`)) return;
+            try {
+                const res = await fetch(URL_API, {
+                    method: 'POST',
+                    body: JSON.stringify({ acao: "excluirItem", codigo: codigo, equipe: EQUIPE })
+                });
+                const json = await res.json();
+                if (json.dados === "EXCLUIDO") {
+                    alert("Item excluído com sucesso!");
+                    await carregarListaContagens();
+                } else {
+                    alert("Erro ao excluir item.");
+                }
+            } catch (erro) {
+                alert("Erro: " + erro.message);
+            }
+        }
+
+        // LIMPAR TODA A LISTA (APENAS DA EQUIPE)
+        async function confirmarLimpezaGeral() {
+            if (!confirm("⚠️ ATENÇÃO: Isso irá apagar TODOS os itens contados pela sua equipe. Esta ação não pode ser desfeita. Deseja continuar?")) return;
+            try {
+                const res = await fetch(URL_API, {
+                    method: 'POST',
+                    body: JSON.stringify({ acao: "limparTudo", equipe: EQUIPE })
+                });
+                const json = await res.json();
+                if (json.dados === "LIMPO") {
+                    alert("Lista limpa com sucesso!");
+                    await carregarListaContagens();
+                } else {
+                    alert("Erro ao limpar lista.");
+                }
+            } catch (erro) {
+                alert("Erro: " + erro.message);
+            }
         }
 
         // EDITAR: busca o produto pelo código e preenche o card
