@@ -31,23 +31,27 @@ input,textarea{width:100%;padding:13px 14px;border:1px solid var(--line);border-
  <div class="loginbox">
   <div class="brand"><div class="logo">BI</div><div><b>BALANÇO IMPÉRIO</b><small>GESTÃO DE INVENTÁRIO</small></div></div>
   <section id="createPanel">
-   <h1>Comece sua contagem.</h1><p class="muted">Crie uma equipe e entre diretamente no balanço. Não precisa de conta, e-mail ou senha.</p>
-   <form id="createForm"><div class="field"><label>NOME DA EQUIPE</label><input id="newTeamName" type="text" minlength="2" maxlength="60" required placeholder="Ex.: EQUIPE A" autocomplete="organization"></div><button id="createBtn" class="btn primary full" type="submit">CRIAR EQUIPE E COMEÇAR →</button></form>
-   <div class="divider">JÁ TEM UMA EQUIPE?</div>
-   <button id="showCode" class="btn dark full" type="button">ENTRAR COM CÓDIGO DA EQUIPE</button>
+   <h1>Acessar sistema.</h1><p class="muted">Escolha seu tipo de acesso.</p>
+   <button id="showAdmin" class="btn dark full" type="button">ADMIN</button>
+   <button id="showCode" class="btn primary full" type="button" style="margin-top:10px">EQUIPES</button>
+  </section>
+  <section id="adminLoginPanel" class="hidden">
+   <h1>ADMIN.</h1><p class="muted">Entre com o mesmo e-mail e senha cadastrados no Supabase.</p>
+   <form id="adminLoginForm"><div class="field"><label>E-MAIL</label><input id="adminEmail" type="email" required autocomplete="username" placeholder="seu@email.com"></div><div class="field"><label>SENHA</label><input id="adminPassword" type="password" required autocomplete="current-password" placeholder="Senha do Supabase"></div><button id="adminLoginBtn" class="btn primary full" type="submit">ENTRAR COMO ADMIN →</button></form>
+   <button id="backHomeAdmin" class="btn soft full" type="button" style="margin-top:9px">VOLTAR</button>
+  </section>
+  <section id="adminPanel" class="hidden">
+   <div class="row between"><h1 style="margin:0">ADMINISTRAÇÃO</h1><button id="adminLogout" class="btn soft" type="button">SAIR</button></div>
+   <p class="muted">Cadastre as equipes e defina uma senha para cada uma.</p>
+   <form id="adminCreateForm"><div class="field"><label>NOME DA EQUIPE</label><input id="adminTeamName" required minlength="2" maxlength="60" placeholder="Ex.: EQUIPE 3"></div><div class="field"><label>SENHA DA EQUIPE</label><input id="adminTeamPassword" type="password" required minlength="6" placeholder="Mínimo de 6 caracteres"></div><button id="adminCreateBtn" class="btn primary full" type="submit">CADASTRAR EQUIPE</button></form>
+   <div class="divider">EQUIPES CADASTRADAS</div><div id="adminTeamsList" class="list"></div>
   </section>
   <section id="codePanel" class="hidden">
-   <h1>Entrar na equipe.</h1><p class="muted">Digite o código de acesso que foi gerado quando a equipe foi criada.</p>
-   <form id="codeForm"><div class="field"><label>CÓDIGO DE ACESSO</label><input id="accessCode" type="text" required placeholder="BI-..." autocomplete="off"></div><button id="enterBtn" class="btn primary full" type="submit">ACESSAR CONTAGEM →</button></form>
+   <h1>Entrar na equipe.</h1><p class="muted">Informe o código e a senha fornecidos pelo administrador.</p>
+   <form id="codeForm"><div class="field"><label>CÓDIGO DA EQUIPE</label><input id="accessCode" type="text" required placeholder="BI-..." autocomplete="off"></div><div class="field"><label>SENHA</label><input id="teamPassword" type="password" required autocomplete="current-password" placeholder="Senha da equipe"></div><button id="enterBtn" class="btn primary full" type="submit">ACESSAR CONTAGEM →</button></form>
    <button id="backCreate" class="btn soft full" type="button" style="margin-top:9px">VOLTAR</button>
   </section>
-  <section id="createdPanel" class="hidden">
-   <h1>Equipe criada!</h1><p class="muted">O código abaixo identifica sua equipe. Ele já ficou salvo neste aparelho. Guarde-o para acessar a equipe em outro celular.</p>
-   <div id="newAccessCode" class="accesscode"></div>
-   <button id="copyCode" class="btn dark full" type="button">COPIAR CÓDIGO</button>
-   <button id="continueBtn" class="btn primary full" type="button" style="margin-top:9px">IR PARA CONTAGEM →</button>
-  </section>
-  <p class="muted small" style="text-align:center;margin:20px 0 0">O acesso desta equipe fica salvo neste aparelho.</p>
+  <p class="muted small" style="text-align:center;margin:20px 0 0">BALANÇO IMPÉRIO · ACESSO RESTRITO</p>
  </div>
 </div>
 <div id="app" class="hidden">
@@ -80,14 +84,24 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function msg(t){$("toast").textContent=t;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),3200)}
 function badge(s){return '<span class="badge '+s+'">'+(s==="OK"?"CONFERIDO":s==="DIVERGENTE"?"DIVERGENTE":"AGUARDANDO")+"</span>"}
-function showStart(section){$("start").classList.remove("hidden");$("app").classList.add("hidden");$("createPanel").classList.toggle("hidden",section!=="create");$("codePanel").classList.toggle("hidden",section!=="code");$("createdPanel").classList.toggle("hidden",section!=="created")}
+let adminSession=null;
+function showStart(section){$("start").classList.remove("hidden");$("app").classList.add("hidden");["createPanel","codePanel","adminLoginPanel","adminPanel"].forEach(id=>$(id).classList.add("hidden"));$(section==="create"?"createPanel":section==="code"?"codePanel":section==="adminLogin"?"adminLoginPanel":"adminPanel").classList.remove("hidden")}
+async function adminApi(action,payload={}){const response=await fetch(SUPABASE_URL+"/functions/v1/manage-team",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+adminSession.access_token},body:JSON.stringify({action,...payload})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Falha ao administrar equipes.");return result}
+async function loadAdminTeams(){const data=await adminApi("list");$("adminTeamsList").innerHTML=(data.teams||[]).map(t=>'<div class="item"><div class="iteminfo"><div class="desc">'+esc(t.name)+'</div><div class="code">'+esc(t.login_code)+'</div><div class="unit">'+(t.login_email?'SENHA CONFIGURADA':'DEFINIR SENHA PARA LIBERAR LOGIN')+'</div></div><div style="display:grid;gap:6px"><button class="btn soft" type="button" data-config="'+t.id+'">DEFINIR / ALTERAR SENHA</button><button class="btn '+(t.active?'danger':'primary')+'" type="button" data-status="'+t.id+'" data-active="'+(!t.active)+'">'+(t.active?'DESATIVAR':'ATIVAR')+'</button></div></div>').join("")||'<div class="empty">Nenhuma equipe cadastrada.</div>';
+$("adminTeamsList").querySelectorAll("[data-config]").forEach(b=>b.addEventListener("click",async()=>{const t=(data.teams||[]).find(x=>x.id===b.dataset.config);const password=prompt("Nova senha para "+t.name+" (mínimo 6 caracteres):");if(password===null)return;const name=prompt("Nome da equipe:",t.name);if(name===null)return;try{await adminApi("update",{team_id:t.id,name,password});msg("Acesso da equipe atualizado.");await loadAdminTeams()}catch(e){msg(e.message)}}));
+$("adminTeamsList").querySelectorAll("[data-status]").forEach(b=>b.addEventListener("click",async()=>{try{await adminApi("status",{team_id:b.dataset.status,active:b.dataset.active==="true"});await loadAdminTeams();msg("Situação atualizada.")}catch(e){msg(e.message)}}))}
 async function api(action,payload={}){const response=await fetch(SUPABASE_URL+"/functions/v1/team-api",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+accessToken},body:JSON.stringify({action,...payload})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Falha na comunicação com o servidor.");return result}
 async function loadData(){const data=await api("data");team=data.team;materials=data.materials||[];statuses=Object.fromEntries((data.statuses||[]).map(x=>[x.material_id,x]));own=data.counts||[];renderOwn();$("teamTitle").textContent=team.name;$("app").classList.remove("hidden");$("start").classList.add("hidden");$("connection").textContent="DADOS ATUALIZADOS";$("connection").className="badge OK"}
 async function openWithToken(token){accessToken=token;try{await loadData();localStorage.setItem(TOKEN_KEY,token)}catch(e){localStorage.removeItem(TOKEN_KEY);accessToken="";throw e}}
 $("createForm").addEventListener("submit",async e=>{e.preventDefault();const name=$("newTeamName").value.trim();if(name.length<2)return msg("Informe o nome da equipe.");const btn=$("createBtn");btn.disabled=true;btn.textContent="CRIANDO EQUIPE...";try{const response=await fetch(SUPABASE_URL+"/functions/v1/team-register",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({name})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Não foi possível criar a equipe.");pendingCode=result.access_code;localStorage.setItem(TOKEN_KEY,pendingCode);await openWithToken(pendingCode);$("teamCodeText").textContent=pendingCode;$("teamCodeBox").classList.remove("hidden");msg("Equipe criada! A contagem já está liberada.")}catch(err){msg(err.message)}finally{btn.disabled=false;btn.textContent="CRIAR EQUIPE E COMEÇAR →"}});
 $("showCode").addEventListener("click",()=>showStart("code"));
+$("showAdmin").addEventListener("click",()=>showStart("adminLogin"));
+$("backHomeAdmin").addEventListener("click",()=>showStart("create"));
 $("backCreate").addEventListener("click",()=>showStart("create"));
-$("codeForm").addEventListener("submit",async e=>{e.preventDefault();const code=$("accessCode").value.trim().toUpperCase();if(!code)return;const btn=$("enterBtn");btn.disabled=true;btn.textContent="VALIDANDO...";try{await openWithToken(code)}catch(err){msg(err.message)}finally{btn.disabled=false;btn.textContent="ACESSAR CONTAGEM →"}});
+$("adminLoginForm").addEventListener("submit",async e=>{e.preventDefault();const btn=$("adminLoginBtn");btn.disabled=true;btn.textContent="VALIDANDO...";try{const response=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({email:$("adminEmail").value.trim(),password:$("adminPassword").value})});const data=await response.json();if(!response.ok||!data.access_token)throw new Error(data.msg||data.message||"E-mail ou senha inválidos.");adminSession=data;await loadAdminTeams();showStart("admin");$("adminPassword").value=""}catch(err){msg(err.message)}finally{btn.disabled=false;btn.textContent="ENTRAR COMO ADMIN →"}});
+$("adminCreateForm").addEventListener("submit",async e=>{e.preventDefault();const btn=$("adminCreateBtn");btn.disabled=true;try{const result=await adminApi("create",{name:$("adminTeamName").value.trim(),password:$("adminTeamPassword").value});$("adminCreateForm").reset();await loadAdminTeams();msg("Equipe cadastrada. Código: "+result.team.login_code)}catch(err){msg(err.message)}finally{btn.disabled=false}});
+$("adminLogout").addEventListener("click",()=>{adminSession=null;showStart("create")});
+$("codeForm").addEventListener("submit",async e=>{e.preventDefault();const code=$("accessCode").value.trim().toUpperCase(),password=$("teamPassword").value;if(!code||!password)return;const btn=$("enterBtn");btn.disabled=true;btn.textContent="VALIDANDO...";try{const response=await fetch(SUPABASE_URL+"/functions/v1/team-login",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({code,password})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Código ou senha inválidos.");await openWithToken(result.access_code)}catch(err){msg(err.message)}finally{btn.disabled=false;btn.textContent="ACESSAR CONTAGEM →"}});
 $("copyCode").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(pendingCode);msg("Código copiado.")}catch{msg("Selecione e copie o código exibido.")}});$("copyTeamCode").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(accessToken);msg("Código copiado.")}catch{msg("Não foi possível copiar automaticamente.")}});
 $("continueBtn").addEventListener("click",async()=>{try{await openWithToken(pendingCode)}catch(err){msg(err.message)}});
 function renderOwn(){const items=own.map(c=>({...c,m:materials.find(m=>m.id===c.material_id),status:statuses[c.material_id]?.status||"AGUARDANDO"})).filter(c=>c.m);$("ownTotal").textContent=items.length;$("ownList").innerHTML=items.length?items.map(c=>'<div class="item"><div class="iteminfo"><div class="code">'+esc(c.m.code)+'</div><div class="desc">'+esc(c.m.description)+'</div><div class="unit">'+esc(c.m.unit)+'</div><div class="observation">'+(c.observation?'OBS.: '+esc(c.observation):'')+'</div></div><div class="row"><div style="text-align:right"><b>'+esc(c.quantity)+'</b></div><span class="status-dot '+esc(c.status)+'" title="Situação da conferência" aria-label="Situação da conferência"></span><button class="btn soft" type="button" data-edit="'+c.material_id+'">EDITAR</button><button class="btn danger" type="button" data-del="'+c.id+'">×</button></div></div>').join(""):'<div class="empty">Nenhuma contagem registrada ainda.</div>';$("ownList").querySelectorAll("[data-edit]").forEach(b=>b.addEventListener("click",()=>choose(b.dataset.edit)));$("ownList").querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>deleteCount(b.dataset.del)))}
