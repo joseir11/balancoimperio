@@ -15,7 +15,30 @@ $("backCreate").addEventListener("click",()=>showStart("create"));
 $("adminLoginForm").addEventListener("submit",async e=>{e.preventDefault();const btn=$("adminLoginBtn");btn.disabled=true;try{const res=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({email:$("adminEmail").value.trim(),password:$("adminPassword").value})});const data=await res.json();if(!res.ok)throw new Error(data.error_description||data.msg||"Falha no login.");adminSession=data;showStart("adminPanel");await loadAdminTeams();prepareShareFile()}catch(err){msg(err.message)}finally{btn.disabled=false}});
 $("adminLogout").addEventListener("click",()=>{adminSession=null;showStart("create")});
 $("adminCreateForm").addEventListener("submit",async e=>{e.preventDefault();const btn=$("adminCreateBtn");btn.disabled=true;try{await adminApi("create",{name:$("adminTeamName").value.trim(),password:$("adminTeamPassword").value});$("adminTeamName").value="";$("adminTeamPassword").value="";msg("Equipe cadastrada.");await loadAdminTeams()}catch(err){msg(err.message)}finally{btn.disabled=false}});
-$("codeForm").addEventListener("submit",async e=>{e.preventDefault();const btn=$("enterBtn");btn.disabled=true;try{const code=$("accessCode").value.trim();const password=$("teamPassword").value;if(!code)throw new Error("Informe o nome ou codigo da equipe.");if(!password)throw new Error("Informe a senha da equipe.");const res=await fetch(SUPABASE_URL+"/functions/v1/team-api",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY},body:JSON.stringify({action:"login",name:code,code:code,password:password})});const data=await res.json();if(!res.ok)throw new Error(data.error||"Falha no acesso.");await openWithToken(data.access_token||data.token)}catch(err){msg(err.message)}finally{btn.disabled=false}});
+$("codeForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ const btn=$("enterBtn"),name=$("accessCode").value.trim().replace(/\\s+/g," "),password=$("teamPassword").value;
+ if(!name||!password){msg("Informe o nome da equipe e a senha.");return;}
+ btn.disabled=true;
+ try{
+  const response=await fetch(SUPABASE_URL+"/functions/v1/team-login",{
+   method:"POST",
+   headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},
+   body:JSON.stringify({name,password})
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(result.error||"Não foi possível acessar. Confira o nome da equipe e a senha.");
+  if(!result.access_code)throw new Error("O servidor não retornou o código de acesso da equipe.");
+  await openWithToken(result.access_code);
+  $("teamPassword").value="";
+  $("accessCode").value="";
+  msg("Acesso realizado com sucesso.");
+ }catch(err){
+  msg(err.message||"Falha ao acessar a equipe.");
+ }finally{
+  btn.disabled=false;
+ }
+});
 function renderOwn(){
  const items=own.map(c=>({...c,m:materials.find(m=>m.id===c.material_id),status:statuses[c.material_id]?.status||"AGUARDANDO"})).filter(c=>c.m);
  const filtered=ownStatusFilter==="TODOS"?items:items.filter(c=>c.status===ownStatusFilter);
