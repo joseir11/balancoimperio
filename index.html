@@ -141,7 +141,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 
    <form id="adminCreateForm">
     <div class="field"><label>Nome da equipe</label><input id="adminTeamName" required minlength="2" maxlength="60" placeholder="Ex.: Equipe 3"></div>
     <div class="field"><label>Senha</label><input id="adminTeamPassword" type="password" required minlength="6" placeholder="Min. 6 caracteres"></div>
-    <button id="adminCreateBtn" class="btn primary full" type="submit"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Cadastrar</button>
+    <div class="login-actions"><button id="adminCreateBtn" class="round-btn enter" type="submit" title="Cadastrar equipe" aria-label="Cadastrar equipe"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
    </form>
    <div class="divider">EQUIPES</div>
    <div id="adminTeamsList" class="list"></div>
@@ -192,7 +192,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 
     <div id="obsWrap" class="obs-field hidden">
      <div class="field"><label>Observacao</label><textarea id="observation" maxlength="1000" placeholder="Opcional"></textarea></div>
     </div>
-    <button id="save" class="btn primary full" type="button" style="margin-top:12px"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Salvar</button>
+    <div class="login-actions"><button id="save" class="round-btn enter" type="button" title="Salvar contagem" aria-label="Salvar contagem" style="margin-top:12px"><svg viewBox="0 0 24 24"><path d="M5 3h12l4 4v14H3V3h2z"/><path d="M7 3v6h10V3M7 21v-7h10v7"/></svg></button></div>
    </div>
   </section>
   <section class="panel">
@@ -219,5 +219,5 @@ input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 
 </div>
 <div id="toast" class="toast hidden"></div>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-<script src="./app.js?v=4"></script>
+<script src="./app.js?v=5"></script>
 </body></html>
