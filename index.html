@@ -14,7 +14,7 @@
   --navy:#0f172a;--orange:#f28b22;--ink:#1e293b;--muted:#64748b;--line:#e2e8f0;
   --bg:#f1f5f9;--green:#16a34a;--yellow:#ca8a04;--red:#dc2626;--card:#fff;
 }
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,sans-serif;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}html,body{overscroll-behavior-y:none}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,sans-serif;-webkit-tap-highlight-color:transparent}
 button,input,textarea,select{font:inherit}button{cursor:pointer}.hidden{display:none!important}
 .login{min-height:100svh;display:grid;place-items:center;padding:20px;background:linear-gradient(160deg,#0b1220,#1e293b 60%)}
 .loginbox{width:min(100%,380px);background:var(--card);padding:28px 24px;border-radius:20px;box-shadow:0 24px 60px #0005}
@@ -219,5 +219,5 @@ input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 
 </div>
 <div id="toast" class="toast hidden"></div>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-<script src="./app.js?v=5"></script>
+<script src="./app.js?v=6"></script>
 </body></html>
