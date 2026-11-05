@@ -4,7 +4,7 @@ create schema if not exists app_private;
 revoke all on schema app_private from public, anon;
 grant usage on schema app_private to authenticated;
 
-create table public.teams(id uuid primary key default gen_random_uuid(), name text not null unique, auth_user_id uuid unique references auth.users(id) on delete cascade, active boolean not null default true, login_email text unique, created_at timestamptz not null default now());
+create table public.teams(id uuid primary key default gen_random_uuid(), name text not null unique, auth_user_id uuid unique references auth.users(id) on delete cascade, active boolean not null default true, login_email text unique, login_code text not null unique, created_at timestamptz not null default now());
 create table public.profiles(id uuid primary key references auth.users(id) on delete cascade, role text not null default 'team' check(role in ('admin','team')), team_id uuid references public.teams(id) on delete set null, created_at timestamptz not null default now());
 create table public.materials(id uuid primary key default gen_random_uuid(), code text not null unique, description text not null, unit text not null default '', active boolean not null default true, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
 create table public.counts(id uuid primary key default gen_random_uuid(), material_id uuid not null references public.materials(id) on delete cascade, team_id uuid not null references public.teams(id) on delete cascade, quantity numeric(14,3) not null check(quantity>=0), updated_at timestamptz not null default now(), unique(material_id,team_id));
@@ -55,6 +55,7 @@ grant select,insert,update,delete on public.teams to authenticated;
 grant select,update on public.profiles to authenticated;
 grant execute on function app_private.is_admin() to authenticated;
 grant execute on function app_private.current_team_id() to authenticated;
+create unique index if not exists teams_login_code_key on public.teams(login_code);
 create index if not exists counts_team_id_idx on public.counts(team_id);
 create index if not exists profiles_team_id_idx on public.profiles(team_id);
 create index if not exists counts_material_id_idx on public.counts(material_id);
