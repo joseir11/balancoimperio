@@ -69,20 +69,35 @@ async function prepareShareFile(showMessage=false){
  finally{sharePreparation=false;if(button)button.disabled=false;}
 }
 async function shareExcelFile(){
- const file=preparedShareFile;
- if(!file){msg("Planilha ainda sendo preparada. Aguarde e tente novamente.");return;}
- if(!window.isSecureContext){msg("O compartilhamento exige abrir o aplicativo por HTTPS.");return;}
- if(typeof navigator.share!=="function"){msg("O Chrome nao disponibilizou o compartilhamento neste contexto. Abra o app diretamente no Chrome.");return;}
+ const button=$("shareCounts");
+ if(button)button.disabled=true;
  try{
-  await navigator.share({
-   files:[file],
-   title:"BALANCO IMPERIO",
-   text:"Contagem das equipes."
+  const file=await buildExcelFile();
+  const buffer=await file.arrayBuffer();
+  const bytes=new Uint8Array(buffer);
+  let binary="";
+  const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+  const fileBase64=btoa(binary);
+  const response=await fetch(SUPABASE_URL+"/functions/v1/share-counts",{
+   method:"POST",
+   headers:{
+    "Content-Type":"application/json",
+    "apikey":SUPABASE_KEY,
+    "Authorization":"Bearer "+adminSession.access_token
+   },
+   body:JSON.stringify({action:"create",filename:file.name,file_base64:fileBase64})
   });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.url)throw new Error(result.error||"Nao foi possivel gerar o link da planilha.");
+  const link=result.url.startsWith("http")?result.url:SUPABASE_URL+result.url;
+  const expires=new Date(result.expires_at).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
+  const message="BALANCO IMPERIO - Planilha de contagem atualizada.\n\nBaixe o Excel pelo link abaixo (válido até "+expires+"):\n"+link;
+  window.location.href="https://wa.me/?text="+encodeURIComponent(message);
  }catch(e){
-  if(e&&e.name==="AbortError")return;
-  const reason=(e&&e.name?e.name+": ":"")+(e&&e.message?e.message:"falha desconhecida");
-  msg("Falha no compartilhamento: "+reason);
+  msg(e.message||"Nao foi possivel compartilhar a planilha.");
+ }finally{
+  if(button)button.disabled=false;
  }
 }
 async function exportCounts(){
