@@ -132,8 +132,34 @@ function badge(s){return '<span class="badge '+s+'">'+(s==="OK"?"CONFERIDO":s===
 let adminSession=null;
 function showStart(section){$("start").classList.remove("hidden");$("app").classList.add("hidden");["createPanel","codePanel","adminLoginPanel","adminPanel"].forEach(id=>$(id).classList.add("hidden"));$(section==="create"?"createPanel":section==="code"?"codePanel":section==="adminLogin"?"adminLoginPanel":"adminPanel").classList.remove("hidden")}
 async function adminApi(action,payload={}){const response=await fetch(SUPABASE_URL+"/functions/v1/manage-team",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+adminSession.access_token},body:JSON.stringify({action,...payload})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Falha ao administrar equipes.");return result}
+let preparedShareFile=null;
+function downloadExcelFile(file){
+ const url=URL.createObjectURL(file);const link=document.createElement("a");link.href=url;link.download=file.name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 async function exportCounts(event){
  const share=event.currentTarget.id==="shareCounts";
+ if(share&&preparedShareFile){
+  const file=preparedShareFile;
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+   try{
+    const sharing=navigator.share({files:[file],title:"Balanço Império - Contagem",text:"Planilha de contagem das equipes."});
+    preparedShareFile=null;
+    await sharing;
+    msg("Compartilhamento concluído.");
+   }catch(e){
+    if(e.name==="AbortError")return;
+    if(e.name==="NotAllowedError"||e.name==="SecurityError"||/permission|permissão|denied/i.test(e.message||"")){
+     downloadExcelFile(file);
+     preparedShareFile=null;
+     msg("O navegador bloqueou o compartilhamento. A planilha foi baixada; anexe-a no WhatsApp.");
+    }else msg(e.message||"Não foi possível compartilhar a planilha.");
+   }
+  }else{
+   downloadExcelFile(file);preparedShareFile=null;
+   msg("Compartilhamento de arquivos não suportado neste navegador. Anexe o Excel baixado no WhatsApp.");
+  }
+  return;
+ }
  const buttons=[$("exportCounts"),$("shareCounts")];
  buttons.forEach(b=>b.disabled=true);
  try{
@@ -174,16 +200,15 @@ async function exportCounts(event){
   const buffer=await workbook.xlsx.writeBuffer();
   const filename="BALANCO_IMPERIO_CONTAGEM_"+new Date().toISOString().slice(0,10)+".xlsx";
   const mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-  const blob=new Blob([buffer],{type:mime});
-  const file=new File([blob],filename,{type:mime});
-  if(share&&navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-   await navigator.share({files:[file],title:"Balanço Império - Contagem",text:"Planilha de contagem das equipes."});
-   msg("Planilha pronta para compartilhar.");
+  const file=new File([new Blob([buffer],{type:mime})],filename,{type:mime});
+  if(share){
+   preparedShareFile=file;
+   msg("Excel preparado. Toque novamente no ícone de compartilhar para escolher o WhatsApp.");
   }else{
-   const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
-   msg(share?"Este aparelho/navegador não permite compartilhar o arquivo diretamente. O Excel foi baixado; anexe-o no WhatsApp.":"Arquivo Excel baixado com "+teams.length+" equipe(s).");
+   downloadExcelFile(file);
+   msg("Arquivo Excel baixado com "+teams.length+" equipe(s).");
   }
- }catch(e){if(e.name==="AbortError")return;msg(e.message||"Não foi possível gerar o arquivo Excel.")}finally{buttons.forEach(b=>b.disabled=false)}
+ }catch(e){msg(e.message||"Não foi possível gerar o arquivo Excel.")}finally{buttons.forEach(b=>b.disabled=false)}
 }
 $("exportCounts").addEventListener("click",exportCounts);
 $("shareCounts").addEventListener("click",exportCounts);
