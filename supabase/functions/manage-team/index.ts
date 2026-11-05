@@ -19,12 +19,14 @@ Deno.serve(async (req) => {
     const body = await req.json();
     if (body.action === "create") {
       const name = String(body.name ?? "").trim(), password = String(body.password ?? "");
-      if (!name || password.length < 8) return json({ error: "Informe o nome e uma senha com pelo menos 8 caracteres." }, 400);
-      const slug = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "");
-      const email = `${slug}@teams.balancoimperio.app`;
+      if (!name || password.length < 6) return json({ error: "Informe o nome e uma senha com pelo menos 6 caracteres." }, 400);
+      const slug = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "") || "equipe";
+      const suffix = String(crypto.getRandomValues(new Uint16Array(1))[0] % 9000 + 1000);
+      const login_code = `${slug.replace(/\./g, "-").toUpperCase()}-${suffix}`;
+      const email = `${slug}.${suffix}@teams.balancoimperio.app`;
       const { data: created, error: ce } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { display_name: name, account_type: "team" } });
       if (ce || !created.user) return json({ error: ce?.message ?? "Falha ao criar usuário." }, 400);
-      const { data: team, error: te } = await admin.from("teams").insert({ name, auth_user_id: created.user.id, login_email: email }).select("id,name,login_email").single();
+      const { data: team, error: te } = await admin.from("teams").insert({ name, auth_user_id: created.user.id, login_email: email, login_code }).select("id,name,login_code").single();
       if (te) { await admin.auth.admin.deleteUser(created.user.id); return json({ error: te.message }, 400); }
       const { error: pe } = await admin.from("profiles").update({ role: "team", team_id: team.id }).eq("id", created.user.id);
       if (pe) return json({ error: pe.message }, 400);
@@ -35,7 +37,7 @@ Deno.serve(async (req) => {
       const { data: team, error } = await admin.from("teams").select("id,auth_user_id").eq("id", teamId).single();
       if (error || !team) return json({ error: "Equipe não encontrada." }, 404);
       if (name) { const { error: e } = await admin.from("teams").update({ name }).eq("id", teamId); if (e) return json({ error: e.message }, 400); }
-      if (password) { if (password.length < 8) return json({ error: "A senha deve ter pelo menos 8 caracteres." }, 400); const { error: e } = await admin.auth.admin.updateUserById(team.auth_user_id, { password }); if (e) return json({ error: e.message }, 400); }
+      if (password) { if (password.length < 6) return json({ error: "A senha deve ter pelo menos 6 caracteres." }, 400); const { error: e } = await admin.auth.admin.updateUserById(team.auth_user_id, { password }); if (e) return json({ error: e.message }, 400); }
       return json({ success: true });
     }
     if (body.action === "delete") {
