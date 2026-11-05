@@ -1,0 +1,2 @@
+-- Estrutura inicial do Balanço Império. Aplicada ao projeto Supabase em 2026-11-05.
+-- Consulte o histórico do banco no Supabase para a versão aplicada.
