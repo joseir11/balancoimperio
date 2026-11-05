@@ -55,7 +55,6 @@ grant select,insert,update,delete on public.teams to authenticated;
 grant select,update on public.profiles to authenticated;
 grant execute on function app_private.is_admin() to authenticated;
 grant execute on function app_private.current_team_id() to authenticated;
-create unique index if not exists teams_login_code_key on public.teams(login_code);
 create index if not exists counts_team_id_idx on public.counts(team_id);
 create index if not exists profiles_team_id_idx on public.profiles(team_id);
 create index if not exists counts_material_id_idx on public.counts(material_id);
