@@ -80,7 +80,7 @@ input,textarea,.own-filter select{border-radius:13px;background:#f7f9fc}
   <section id="adminPanel" class="hidden">
    <div class="row between"><h1 style="margin:0">ADMINISTRAÇÃO</h1><button id="adminLogout" class="btn soft" type="button">SAIR</button></div>
    <p class="muted">Cadastre as equipes e defina uma senha para cada uma.</p>
-   <button id="exportCounts" class="btn primary full" type="button" style="margin:4px 0 18px">⇩ EXPORTAR CONTAGEM DAS EQUIPES</button>
+   <button id="exportCounts" class="icon-btn edit" type="button" style="width:42px;height:42px;margin:4px 0 18px" title="Exportar contagem das equipes em Excel" aria-label="Exportar contagem das equipes em Excel"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 17v3h14v-3"/></svg></button>
    <form id="adminCreateForm"><div class="field"><label>NOME DA EQUIPE</label><input id="adminTeamName" required minlength="2" maxlength="60" placeholder="Ex.: EQUIPE 3"></div><div class="field"><label>SENHA DA EQUIPE</label><input id="adminTeamPassword" type="password" required minlength="6" placeholder="Mínimo de 6 caracteres"></div><button id="adminCreateBtn" class="btn primary full" type="submit">CADASTRAR EQUIPE</button></form>
    <div class="divider">EQUIPES CADASTRADAS</div><div id="adminTeamsList" class="list"></div>
   </section>
