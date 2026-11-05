@@ -80,7 +80,7 @@ input,textarea,.own-filter select{border-radius:13px;background:#f7f9fc}
   <section id="adminPanel" class="hidden">
    <div class="row between"><h1 style="margin:0">ADMINISTRAÇÃO</h1><button id="adminLogout" class="btn soft" type="button">SAIR</button></div>
    <p class="muted">Cadastre as equipes e defina uma senha para cada uma.</p>
-   <button id="exportCounts" class="icon-btn edit" type="button" style="width:42px;height:42px;margin:4px 0 18px" title="Exportar contagem das equipes em Excel" aria-label="Exportar contagem das equipes em Excel"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 17v3h14v-3"/></svg></button>
+   <div class="row" style="gap:9px;margin:4px 0 18px"><button id="exportCounts" class="icon-btn edit" type="button" style="width:42px;height:42px" title="Baixar Excel" aria-label="Baixar Excel"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 17v3h14v-3"/></svg></button><button id="shareCounts" class="icon-btn toggle" type="button" style="width:42px;height:42px" title="Compartilhar Excel" aria-label="Compartilhar Excel"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.4M8.7 13.3l6.6 4.4"/></svg></button></div>
    <form id="adminCreateForm"><div class="field"><label>NOME DA EQUIPE</label><input id="adminTeamName" required minlength="2" maxlength="60" placeholder="Ex.: EQUIPE 3"></div><div class="field"><label>SENHA DA EQUIPE</label><input id="adminTeamPassword" type="password" required minlength="6" placeholder="Mínimo de 6 caracteres"></div><button id="adminCreateBtn" class="btn primary full" type="submit">CADASTRAR EQUIPE</button></form>
    <div class="divider">EQUIPES CADASTRADAS</div><div id="adminTeamsList" class="list"></div>
   </section>
@@ -132,8 +132,10 @@ function badge(s){return '<span class="badge '+s+'">'+(s==="OK"?"CONFERIDO":s===
 let adminSession=null;
 function showStart(section){$("start").classList.remove("hidden");$("app").classList.add("hidden");["createPanel","codePanel","adminLoginPanel","adminPanel"].forEach(id=>$(id).classList.add("hidden"));$(section==="create"?"createPanel":section==="code"?"codePanel":section==="adminLogin"?"adminLoginPanel":"adminPanel").classList.remove("hidden")}
 async function adminApi(action,payload={}){const response=await fetch(SUPABASE_URL+"/functions/v1/manage-team",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+adminSession.access_token},body:JSON.stringify({action,...payload})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Falha ao administrar equipes.");return result}
-async function exportCounts(){
- const btn=$("exportCounts");btn.disabled=true;btn.textContent="PREPARANDO EXCEL...";
+async function exportCounts(event){
+ const share=event.currentTarget.id==="shareCounts";
+ const buttons=[$("exportCounts"),$("shareCounts")];
+ buttons.forEach(b=>b.disabled=true);
  try{
   if(!window.ExcelJS)throw new Error("Não foi possível carregar o gerador de Excel. Verifique sua conexão e tente novamente.");
   const data=await adminApi("export");const allTeams=data.teams||[],materials=data.materials||[],counts=data.counts||[];
@@ -141,23 +143,12 @@ async function exportCounts(){
   if(!teams.length)throw new Error("Ainda não existem contagens registradas pelas equipes.");
   const byKey=new Map(counts.map(c=>[c.material_id+"|"+c.team_id,c.quantity]));
   const workbook=new ExcelJS.Workbook();
-  workbook.creator="BALANÇO IMPÉRIO";
-  workbook.created=new Date();
-  workbook.modified=new Date();
-  const sheet=workbook.addWorksheet("CONTAGEM",{
-   views:[{state:"frozen",ySplit:1,showGridLines:false}],
-   properties:{defaultRowHeight:21}
-  });
+  workbook.creator="BALANÇO IMPÉRIO";workbook.created=new Date();workbook.modified=new Date();
+  const sheet=workbook.addWorksheet("CONTAGEM",{views:[{state:"frozen",ySplit:1,showGridLines:false}],properties:{defaultRowHeight:21}});
   const headers=["CÓDIGO","DESCRIÇÃO","UNIDADE",...teams.map(t=>t.name),"CONTAGEM CONFERIDA"];
   sheet.addRow(headers);
-  const header=sheet.getRow(1);
-  header.height=30;
-  header.eachCell(cell=>{
-   cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF111C2D"}};
-   cell.font={name:"Arial",size:10,bold:true,color:{argb:"FFFFFFFF"}};
-   cell.alignment={vertical:"middle",horizontal:"center",wrapText:true};
-   cell.border={bottom:{style:"medium",color:{argb:"FFF28B22"}}};
-  });
+  const header=sheet.getRow(1);header.height=30;
+  header.eachCell(cell=>{cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF111C2D"}};cell.font={name:"Arial",size:10,bold:true,color:{argb:"FFFFFFFF"}};cell.alignment={vertical:"middle",horizontal:"center",wrapText:true};cell.border={bottom:{style:"medium",color:{argb:"FFF28B22"}}}});
   materials.forEach(m=>{
    const values=teams.map(t=>byKey.get(m.id+"|"+t.id));
    const complete=values.every(v=>v!==undefined&&v!==null&&v!=="");
@@ -176,22 +167,25 @@ async function exportCounts(){
    finalCell.fill={type:"pattern",pattern:"solid",fgColor:{argb:equal?"FFE7F6ED":complete?"FFFFF0EF":"FFFFF5DD"}};
    finalCell.alignment={vertical:"middle",horizontal:"right"};
   });
-  sheet.columns=[
-   {width:18},{width:52},{width:13},
-   ...teams.map(()=>({width:18})),
-   {width:24}
-  ];
+  sheet.columns=[{width:18},{width:52},{width:13},...teams.map(()=>({width:18})),{width:24}];
   sheet.autoFilter={from:{row:1,column:1},to:{row:Math.max(1,sheet.rowCount),column:headers.length}};
   sheet.pageSetup={orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0};
-  sheet.headerFooter.oddHeader="&CBALANÇO IMPÉRIO";
-  sheet.headerFooter.oddFooter="&P de &N";
+  sheet.headerFooter.oddHeader="&CBALANÇO IMPÉRIO";sheet.headerFooter.oddFooter="&P de &N";
   const buffer=await workbook.xlsx.writeBuffer();
-  const blob=new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
-  const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download="BALANCO_IMPERIO_CONTAGEM_"+new Date().toISOString().slice(0,10)+".xlsx";document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
-  msg("Arquivo Excel exportado com "+teams.length+" equipe(s).");
- }catch(e){msg(e.message||"Não foi possível gerar o arquivo Excel.")}finally{btn.disabled=false;btn.textContent="⇩ EXPORTAR CONTAGEM DAS EQUIPES"}
+  const filename="BALANCO_IMPERIO_CONTAGEM_"+new Date().toISOString().slice(0,10)+".xlsx";
+  const mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  const blob=new Blob([buffer],{type:mime});
+  const file=new File([blob],filename,{type:mime});
+  if(share&&navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+   await navigator.share({files:[file],title:"Balanço Império - Contagem",text:"Planilha de contagem das equipes."});
+   msg("Planilha pronta para compartilhar.");
+  }else{
+   const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+   msg(share?"Este aparelho/navegador não permite compartilhar o arquivo diretamente. O Excel foi baixado; anexe-o no WhatsApp.":"Arquivo Excel baixado com "+teams.length+" equipe(s).");
+  }
+ }catch(e){if(e.name==="AbortError")return;msg(e.message||"Não foi possível gerar o arquivo Excel.")}finally{buttons.forEach(b=>b.disabled=false)}
 }
-$("exportCounts").addEventListener("click",exportCounts);
+$("exportCounts").addEventListener("click",exportCounts);\n$("shareCounts").addEventListener("click",exportCounts);
 async function loadAdminTeams(){
  const data=await adminApi("list");
  $("adminTeamsList").innerHTML=(data.teams||[]).map(t=>'<div class="item team-card"><div class="iteminfo"><div class="desc">'+esc(t.name)+'</div><div class="unit">'+(t.active?'EQUIPE ATIVA':'EQUIPE INATIVA')+'</div></div><div class="item-tools"><button class="icon-btn edit" type="button" data-config="'+t.id+'" title="Editar nome ou senha" aria-label="Editar nome ou senha"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button><button class="icon-btn '+(t.active?'toggle':'off')+'" type="button" data-status="'+t.id+'" data-active="'+(!t.active)+'" title="'+(t.active?'Desativar equipe':'Ativar equipe')+'" aria-label="'+(t.active?'Desativar equipe':'Ativar equipe')+'"><svg viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M5.5 5.5a9 9 0 1 0 13 0"/></svg></button><button class="icon-btn delete" type="button" data-delete="'+t.id+'" title="Excluir equipe" aria-label="Excluir equipe"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button></div></div>').join("")||'<div class="empty">Nenhuma equipe cadastrada.</div>';
