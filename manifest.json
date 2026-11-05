@@ -1,0 +1,19 @@
+{
+  "name": "Balanço Império",
+  "short_name": "Balanço",
+  "description": "Aplicativo de gestão de inventário",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f6fa",
+  "theme_color": "#111c2d",
+  "icons": [
+    {
+      "src": "./app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
