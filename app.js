@@ -1,14 +1,25 @@
 const SUPABASE_URL="https://znivpoqcvxkgscqoszfj.supabase.co";
 const SUPABASE_KEY="sb_publishable_-77CwES71Z8Js-zUoADACQ_WAPZDOk6";
 const TOKEN_KEY="balanco_imperio_team_access";
+const ADMIN_SESSION_KEY="balanco_imperio_admin_session";
 let accessToken="",team=null,materials=[],statuses={},own=[],selected=null,pendingCode="",ownStatusFilter="TODOS",ownListCollapsed=false;
 const $=id=>document.getElementById(id);
 function esc(s){const m={38:"amp",60:"lt",62:"gt",34:"quot",39:"#39"};return String(s??"").replace(/[&<>"']/g,c=>"&"+(m[c.charCodeAt(0)]||"")+";")}
 function msg(t){$("toast").textContent=t;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),3200)}
 function badge(s){return '<span class="status-dot '+s+'" title="'+(s==="OK"?"OK":s==="DIVERGENTE"?"Divergente":"Aguardando")+'"></span>'}
 let adminSession=null;
+async function ensureAdminSession(){
+ if(!adminSession)throw new Error("Sessao administrativa nao inicializada.");
+ const expiresAt=Number(adminSession.expires_at||0);
+ if(expiresAt&&expiresAt>Date.now()/1000+60)return;
+ if(!adminSession.refresh_token)throw new Error("Sessao administrativa expirada. Entre novamente.");
+ const response=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({refresh_token:adminSession.refresh_token})});
+ const data=await response.json();
+ if(!response.ok)throw new Error(data.error_description||data.msg||"Sessao administrativa expirada.");
+ adminSession=data;localStorage.setItem(ADMIN_SESSION_KEY,JSON.stringify(data));
+}
 function showStart(section){$("start").classList.remove("hidden");$("app").classList.add("hidden");["createPanel","codePanel","adminLoginPanel","adminPanel"].forEach(id=>$(id).classList.add("hidden"));$(section==="create"?"createPanel":section==="code"?"codePanel":section==="adminLogin"?"adminLoginPanel":"adminPanel").classList.remove("hidden")}
-async function adminApi(action,payload={}){const response=await fetch(SUPABASE_URL+"/functions/v1/manage-team",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+adminSession.access_token},body:JSON.stringify({action,...payload})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Falha ao administrar equipes.");return result}
+async function adminApi(action,payload={}){await ensureAdminSession();const response=await fetch(SUPABASE_URL+"/functions/v1/manage-team",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+adminSession.access_token},body:JSON.stringify({action,...payload})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Falha ao administrar equipes.");return result}
 let preparedShareFile=null,sharePreparation=false;
 function downloadExcelFile(file){
  const url=URL.createObjectURL(file);const link=document.createElement("a");link.href=url;link.download=file.name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -93,8 +104,8 @@ $("showCode").addEventListener("click",()=>showStart("code"));
 $("showAdmin").addEventListener("click",()=>showStart("adminLogin"));
 $("backHomeAdmin").addEventListener("click",()=>showStart("create"));
 $("backCreate").addEventListener("click",()=>showStart("create"));
-$("adminLoginForm").addEventListener("submit",async e=>{e.preventDefault();const btn=$("adminLoginBtn");btn.disabled=true;try{const res=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({email:$("adminEmail").value.trim(),password:$("adminPassword").value})});const data=await res.json();if(!res.ok)throw new Error(data.error_description||data.msg||"Falha no login.");adminSession=data;showStart("adminPanel");await loadAdminTeams();prepareShareFile()}catch(err){msg(err.message)}finally{btn.disabled=false}});
-$("adminLogout").addEventListener("click",()=>{adminSession=null;showStart("create")});
+$("adminLoginForm").addEventListener("submit",async e=>{e.preventDefault();const btn=$("adminLoginBtn");btn.disabled=true;try{const res=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({email:$("adminEmail").value.trim(),password:$("adminPassword").value})});const data=await res.json();if(!res.ok)throw new Error(data.error_description||data.msg||"Falha no login.");adminSession=data;localStorage.setItem(ADMIN_SESSION_KEY,JSON.stringify(data));showStart("adminPanel");await loadAdminTeams();prepareShareFile()}catch(err){msg(err.message)}finally{btn.disabled=false}});
+$("adminLogout").addEventListener("click",()=>{adminSession=null;localStorage.removeItem(ADMIN_SESSION_KEY);showStart("create")});
 $("adminCreateForm").addEventListener("submit",async e=>{e.preventDefault();const btn=$("adminCreateBtn");btn.disabled=true;try{await adminApi("create",{name:$("adminTeamName").value.trim(),password:$("adminTeamPassword").value});$("adminTeamName").value="";$("adminTeamPassword").value="";msg("Equipe cadastrada.");await loadAdminTeams()}catch(err){msg(err.message)}finally{btn.disabled=false}});
 $("codeForm").addEventListener("submit",async e=>{
  e.preventDefault();
@@ -140,5 +151,23 @@ async function deleteCount(id){if(!confirm("Excluir esta contagem?"))return;try{
 $("switchTeam").addEventListener("click",()=>{if(confirm("Sair desta equipe neste aparelho?")){localStorage.removeItem(TOKEN_KEY);accessToken="";team=null;showStart("create")}});
 $("copyTeamCode")?.addEventListener("click",()=>{const t=$("teamCodeText")?.textContent;if(t)navigator.clipboard?.writeText(t).then(()=>msg("Codigo copiado."))});
 $("toggleObs")?.addEventListener("click",()=>$("obsWrap").classList.toggle("hidden"));
-(async()=>{localStorage.removeItem(TOKEN_KEY);showStart("create")})();
+(async()=>{
+ showStart("create");
+ const savedTeamToken=localStorage.getItem(TOKEN_KEY);
+ if(savedTeamToken){
+  try{await openWithToken(savedTeamToken);return;}
+  catch(e){localStorage.removeItem(TOKEN_KEY);accessToken="";showStart("create");}
+ }
+ const savedAdmin=localStorage.getItem(ADMIN_SESSION_KEY);
+ if(savedAdmin){
+  try{
+   adminSession=JSON.parse(savedAdmin);
+   await ensureAdminSession();
+   showStart("adminPanel");
+   await loadAdminTeams();
+   prepareShareFile();
+   return;
+  }catch(e){adminSession=null;localStorage.removeItem(ADMIN_SESSION_KEY);showStart("create");}
+ }
+})();
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
