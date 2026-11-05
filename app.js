@@ -61,7 +61,7 @@ async function shareExcelFile(){
  const file=preparedShareFile;
  if(!file){msg("Planilha ainda sendo preparada.");return;}
  if(!navigator.share||!navigator.canShare||!navigator.canShare({files:[file]})){msg("Use o download e anexe o Excel.");return;}
- try{await navigator.share({files:[file],title:"Balanco Imperio",text:"Contagem das equipes.");}
+ try{await navigator.share({files:[file],title:"Balanco Imperio",text:"Contagem das equipes."});}
  catch(e){if(e.name==="AbortError")return;msg("Nao foi possivel compartilhar.");}
 }
 async function exportCounts(){
