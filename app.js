@@ -59,7 +59,7 @@ async function buildExcelFile(){
  const buffer=await workbook.xlsx.writeBuffer();
  const filename="BALANCO_IMPERIO_CONTAGEM_"+new Date().toISOString().slice(0,10)+".xlsx";
  const mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
- return new File([new Blob([buffer],{type:mime})],filename,{type:mime});
+ return new File([buffer],filename,{type:mime,lastModified:Date.now()});
 }
 async function prepareShareFile(showMessage=false){
  if(sharePreparation||!adminSession)return;
@@ -71,19 +71,18 @@ async function prepareShareFile(showMessage=false){
 async function shareExcelFile(){
  const file=preparedShareFile;
  if(!file){msg("Planilha ainda sendo preparada. Aguarde e tente novamente.");return;}
+ if(!window.isSecureContext){msg("O compartilhamento exige abrir o aplicativo por HTTPS.");return;}
+ if(typeof navigator.share!=="function"){msg("O Chrome nao disponibilizou o compartilhamento neste contexto. Abra o app diretamente no Chrome.");return;}
  try{
-  const shareData={files:[file],title:"Balanco Imperio",text:"Contagem das equipes."};
-  if(navigator.share&&navigator.canShare&&navigator.canShare(shareData)){
-   await navigator.share(shareData);
-   return;
-  }
-  downloadExcelFile(file);
-  msg("Este navegador nao permite compartilhar arquivos diretamente. O Excel foi baixado para voce anexar.");
+  await navigator.share({
+   files:[file],
+   title:"BALANCO IMPERIO",
+   text:"Contagem das equipes."
+  });
  }catch(e){
   if(e&&e.name==="AbortError")return;
-  downloadExcelFile(file);
-  const reason=e&&e.message?e.message:"recurso indisponivel";
-  msg("Compartilhamento direto indisponivel ("+reason+"). O Excel foi baixado para voce anexar.");
+  const reason=(e&&e.name?e.name+": ":"")+(e&&e.message?e.message:"falha desconhecida");
+  msg("Falha no compartilhamento: "+reason);
  }
 }
 async function exportCounts(){
