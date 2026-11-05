@@ -70,10 +70,21 @@ async function prepareShareFile(showMessage=false){
 }
 async function shareExcelFile(){
  const file=preparedShareFile;
- if(!file){msg("Planilha ainda sendo preparada.");return;}
- if(!navigator.share||!navigator.canShare||!navigator.canShare({files:[file]})){msg("Use o download e anexe o Excel.");return;}
- try{await navigator.share({files:[file],title:"Balanco Imperio",text:"Contagem das equipes."});}
- catch(e){if(e.name==="AbortError")return;msg("Nao foi possivel compartilhar.");}
+ if(!file){msg("Planilha ainda sendo preparada. Aguarde e tente novamente.");return;}
+ try{
+  const shareData={files:[file],title:"Balanco Imperio",text:"Contagem das equipes."};
+  if(navigator.share&&navigator.canShare&&navigator.canShare(shareData)){
+   await navigator.share(shareData);
+   return;
+  }
+  downloadExcelFile(file);
+  msg("Este navegador nao permite compartilhar arquivos diretamente. O Excel foi baixado para voce anexar.");
+ }catch(e){
+  if(e&&e.name==="AbortError")return;
+  downloadExcelFile(file);
+  const reason=e&&e.message?e.message:"recurso indisponivel";
+  msg("Compartilhamento direto indisponivel ("+reason+"). O Excel foi baixado para voce anexar.");
+ }
 }
 async function exportCounts(){
  const button=$("exportCounts");if(button)button.disabled=true;
