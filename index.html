@@ -110,6 +110,6 @@ function choose(id){selected=materials.find(m=>m.id===id);if(!selected)return;co
 $("save").addEventListener("click",async()=>{if(!selected||$("qty").value===""||!Number.isFinite(+$("qty").value)||+$("qty").value<0)return msg("Informe uma quantidade válida.");const btn=$("save");btn.disabled=true;btn.textContent="SALVANDO...";try{await api("save",{material_id:selected.id,quantity:+$("qty").value,observation:$("observation").value});await loadData();choose(selected.id);msg("Contagem salva com sucesso.")}catch(e){msg(e.message)}finally{btn.disabled=false;btn.textContent="SALVAR CONTAGEM"}});
 async function deleteCount(id){if(!confirm("Excluir esta contagem?"))return;try{await api("delete",{count_id:id});await loadData();$("chosen").classList.add("hidden");msg("Contagem excluída.")}catch(e){msg(e.message)}}
 $("switchTeam").addEventListener("click",()=>{if(confirm("Deseja sair desta equipe neste aparelho? O código continuará válido para entrar novamente.")){localStorage.removeItem(TOKEN_KEY);accessToken="";team=null;showStart("create")}});
-(async()=>{const saved=localStorage.getItem(TOKEN_KEY);if(saved){try{await openWithToken(saved)}catch(e){showStart("create");msg("O acesso salvo não foi validado. Entre novamente com o código da equipe.")}}})();
+(async()=>{localStorage.removeItem(TOKEN_KEY);showStart("create")})();
 </script>
 </body></html>
