@@ -3,13 +3,13 @@ const SUPABASE_KEY="sb_publishable_-77CwES71Z8Js-zUoADACQ_WAPZDOk6";
 const TOKEN_KEY="balanco_imperio_team_access";
 let accessToken="",team=null,materials=[],statuses={},own=[],selected=null,pendingCode="",ownStatusFilter="TODOS",ownListCollapsed=false;
 const $=id=>document.getElementById(id);
-function esc(s){return String(s??"").replace(/&/g,"&").replace(/</g,"<").replace(/>/g,">").replace(/"/g,""").replace(/'/g,"&#39;")}
+function esc(s){const m={38:"amp",60:"lt",62:"gt",34:"quot",39:"#39"};return String(s??"").replace(/[&<>"']/g,c=>"&"+(m[c.charCodeAt(0)]||"")+";")}
 function msg(t){$("toast").textContent=t;$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),3200)}
 function badge(s){return '<span class="status-dot '+s+'" title="'+(s==="OK"?"OK":s==="DIVERGENTE"?"Divergente":"Aguardando")+'"></span>'}
 let adminSession=null;
 function showStart(section){$("start").classList.remove("hidden");$("app").classList.add("hidden");["createPanel","codePanel","adminLoginPanel","adminPanel"].forEach(id=>$(id).classList.add("hidden"));$(section==="create"?"createPanel":section==="code"?"codePanel":section==="adminLogin"?"adminLoginPanel":"adminPanel").classList.remove("hidden")}
 async function adminApi(action,payload={}){const response=await fetch(SUPABASE_URL+"/functions/v1/manage-team",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+adminSession.access_token},body:JSON.stringify({action,...payload})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Falha ao administrar equipes.");return result}
-let preparedShareFile=null,sharePreparation=false,shareRefreshTimer=null;
+let preparedShareFile=null,sharePreparation=false;
 function downloadExcelFile(file){
  const url=URL.createObjectURL(file);const link=document.createElement("a");link.href=url;link.download=file.name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
@@ -45,8 +45,6 @@ async function buildExcelFile(){
   finalCell.alignment={vertical:"middle",horizontal:"right"};
  });
  sheet.columns=[{width:18},{width:52},{width:13},...teams.map(()=>({width:18})),{width:24}];
- sheet.autoFilter={from:{row:1,column:1},to:{row:Math.max(1,sheet.rowCount),column:headers.length}};
- sheet.pageSetup={orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0};
  const buffer=await workbook.xlsx.writeBuffer();
  const filename="BALANCO_IMPERIO_CONTAGEM_"+new Date().toISOString().slice(0,10)+".xlsx";
  const mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -55,37 +53,27 @@ async function buildExcelFile(){
 async function prepareShareFile(showMessage=false){
  if(sharePreparation||!adminSession)return;
  sharePreparation=true;const button=$("shareCounts");if(button)button.disabled=true;
- try{
-  const file=await buildExcelFile();preparedShareFile=file;
-  if(showMessage)msg("Planilha pronta.");
- }catch(e){
-  if(showMessage)msg(e.message||"Nao foi possivel preparar a planilha.");
- }finally{
-  sharePreparation=false;if(button)button.disabled=false;
- }
+ try{const file=await buildExcelFile();preparedShareFile=file;if(showMessage)msg("Planilha pronta.");}
+ catch(e){if(showMessage)msg(e.message||"Erro ao preparar planilha.");}
+ finally{sharePreparation=false;if(button)button.disabled=false;}
 }
 async function shareExcelFile(){
  const file=preparedShareFile;
- if(!file){msg("A planilha ainda esta sendo preparada.");return;}
- if(!navigator.share||!navigator.canShare||!navigator.canShare({files:[file]})){
-  msg("Use o icone de download e anexe o Excel.");return;
- }
- try{
-  await navigator.share({files:[file],title:"Balanco Imperio",text:"Contagem das equipes."});
- }catch(e){
-  if(e.name==="AbortError")return;
-  msg("Nao foi possivel compartilhar. Use o download.");
- }
+ if(!file){msg("Planilha ainda sendo preparada.");return;}
+ if(!navigator.share||!navigator.canShare||!navigator.canShare({files:[file]})){msg("Use o download e anexe o Excel.");return;}
+ try{await navigator.share({files:[file],title:"Balanco Imperio",text:"Contagem das equipes.");}
+ catch(e){if(e.name==="AbortError")return;msg("Nao foi possivel compartilhar.");}
 }
 async function exportCounts(){
  const button=$("exportCounts");if(button)button.disabled=true;
- try{
-  const file=await buildExcelFile();downloadExcelFile(file);
-  preparedShareFile=file;msg("Excel baixado.");
- }catch(e){msg(e.message||"Nao foi possivel gerar o Excel.")}finally{if(button)button.disabled=false}
+ try{const file=await buildExcelFile();downloadExcelFile(file);preparedShareFile=file;msg("Excel baixado.");}
+ catch(e){msg(e.message||"Nao foi possivel gerar o Excel.");}
+ finally{if(button)button.disabled=false;}
 }
-document.addEventListener("DOMContentLoaded",()=>{
+function bindExportButtons(){
  const ex=$("exportCounts");const sh=$("shareCounts");
  if(ex)ex.addEventListener("click",exportCounts);
  if(sh)sh.addEventListener("click",shareExcelFile);
-});
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bindExportButtons);
+else bindExportButtons();
