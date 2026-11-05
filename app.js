@@ -55,13 +55,13 @@ async function buildExcelFile(){
 }
 async function prepareShareFile(showMessage=false){
  if(sharePreparation||!adminSession)return;
- sharePreparation=true;const button=$("shareCounts");button.disabled=true;button.title="Preparando planilha para compartilhar";
+ sharePreparation=true;const button=$("shareCounts");button.disabled=true;button.title="Preparando planilha";
  try{
   const file=await buildExcelFile();preparedShareFile=file;
-  button.title="Compartilhar Excel";button.setAttribute("aria-label","Compartilhar Excel");
-  if(showMessage)msg("Planilha atualizada e pronta para compartilhar.");
+  button.title="Compartilhar Excel";
+  if(showMessage)msg("Planilha pronta.");
  }catch(e){
-  button.title="Não foi possível preparar a planilha";
+  button.title="Erro ao preparar";
   if(showMessage)msg(e.message||"Não foi possível preparar a planilha.");
  }finally{
   sharePreparation=false;button.disabled=false;
@@ -69,23 +69,23 @@ async function prepareShareFile(showMessage=false){
 }
 async function shareExcelFile(){
  const file=preparedShareFile;
- if(!file){msg("A planilha ainda está sendo preparada. Aguarde alguns segundos e tente novamente.");return;}
+ if(!file){msg("A planilha ainda está sendo preparada.");return;}
  if(!navigator.share||!navigator.canShare||!navigator.canShare({files:[file]})){
-  msg("Este navegador não oferece compartilhamento direto de arquivos. Use o ícone de download e anexe o Excel no aplicativo desejado.");return;
+  msg("Use o ícone de download e anexe o Excel.");return;
  }
  try{
-  await navigator.share({files:[file],title:"Balanço Império - Contagem",text:"Planilha de contagem das equipes."});
+  await navigator.share({files:[file],title:"Balanço Império",text:"Contagem das equipes."});
  }catch(e){
   if(e.name==="AbortError")return;
-  msg("O navegador não permitiu abrir o compartilhamento. Tente novamente ou use o botão de download.");
+  msg("Não foi possível compartilhar. Use o download.");
  }
 }
 async function exportCounts(){
  const button=$("exportCounts");button.disabled=true;
  try{
   const file=await buildExcelFile();downloadExcelFile(file);
-  preparedShareFile=file;msg("Arquivo Excel baixado e atualizado.");
- }catch(e){msg(e.message||"Não foi possível gerar o arquivo Excel.")}finally{button.disabled=false}
+  preparedShareFile=file;msg("Excel baixado.");
+ }catch(e){msg(e.message||"Não foi possível gerar o Excel.")}finally{button.disabled=false}
 }
 $("exportCounts").addEventListener("click",exportCounts);
 $("shareCounts").addEventListener("click",shareExcelFile);
