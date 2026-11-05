@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#111c2d"><title>Balanço Império</title>
+<meta name="theme-color" content="#111c2d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="mobile-web-app-capable" content="yes"><link rel="manifest" href="./manifest.json"><title>Balanço Império</title>
 <style>
 :root{--navy:#111c2d;--orange:#f28b22;--ink:#1c293b;--muted:#748195;--line:#e6ebf1;--bg:#f3f6fa;--green:#168653;--yellow:#b78312;--red:#ce4848}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,sans-serif}button,input{font:inherit}button{cursor:pointer}.hidden{display:none!important}
@@ -45,7 +45,23 @@ input,textarea{font-size:14px}.field{min-width:0}#adminTeamsList .item,#ownList 
 }
 @media(max-width:380px){#ownList .item-tools,#adminTeamsList .item-tools{gap:4px}.icon-btn{width:32px;height:32px;min-width:32px;min-height:32px}.top .brand small{display:none}.top .brand b{font-size:11px}}
 
-.own-list-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0;border:0;background:transparent;color:var(--ink);font:950 14px/1.3 Inter,system-ui,sans-serif;text-align:left;cursor:pointer}.own-list-toggle svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s ease}.own-list-toggle[aria-expanded="false"] svg{transform:rotate(-90deg)}.own-filter{display:flex;align-items:center;gap:10px;margin-top:14px}.own-filter label{font-size:10px;font-weight:900;letter-spacing:.06em;color:var(--muted);white-space:nowrap}.own-filter select{min-width:0;flex:1;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:#f9fafc;color:var(--ink);font:700 12px Inter,system-ui,sans-serif}.own-list-collapsed{display:none!important}@media(max-width:560px){.own-filter{align-items:stretch;flex-direction:column;gap:6px}.own-filter select{width:100%}}</style>
+.own-list-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0;border:0;background:transparent;color:var(--ink);font:950 14px/1.3 Inter,system-ui,sans-serif;text-align:left;cursor:pointer}.own-list-toggle svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s ease}.own-list-toggle[aria-expanded="false"] svg{transform:rotate(-90deg)}.own-filter{display:flex;align-items:center;gap:10px;margin-top:14px}.own-filter label{font-size:10px;font-weight:900;letter-spacing:.06em;color:var(--muted);white-space:nowrap}.own-filter select{min-width:0;flex:1;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:#f9fafc;color:var(--ink);font:700 12px Inter,system-ui,sans-serif}.own-list-collapsed{display:none!important}
+/* VISUAL DE APLICATIVO */
+body{background:linear-gradient(180deg,#eaf0f7 0,#f4f6fa 260px);min-height:100svh;letter-spacing:-.01em}
+.top{box-shadow:0 5px 22px #07142630;min-height:62px;backdrop-filter:blur(14px)}
+.container{max-width:820px;padding-top:25px}
+.welcome{padding:3px 2px 8px}.welcome h2{font-size:clamp(24px,4vw,31px)}
+.panel{border:1px solid #e4eaf2;border-radius:20px;padding:20px;box-shadow:0 8px 26px #1a2b4210;transition:box-shadow .2s ease,transform .2s ease}
+.panel h3{letter-spacing:.045em;color:#34445b}
+.stat{border-radius:15px;background:linear-gradient(145deg,#fff,#f8fafd)}
+input,textarea,.own-filter select{border-radius:13px;background:#f7f9fc}
+.btn{border-radius:12px;letter-spacing:.015em}.primary{box-shadow:0 5px 14px #f28b2233}
+.item{border-radius:14px;background:#fff;transition:border-color .18s ease,transform .18s ease}.item:active{transform:scale(.99)}
+.own-list-toggle{font-size:14px;min-height:25px}
+.login{background:radial-gradient(circle at 85% 12%,#354a66,transparent 34%),linear-gradient(145deg,#0b1422,#182941)}
+.loginbox{border-radius:25px;box-shadow:0 28px 90px #0005}
+@media(max-width:560px){.container{padding:16px 11px calc(32px + env(safe-area-inset-bottom))}.top{padding:10px 12px;min-height:58px}.panel{padding:15px;border-radius:17px}.welcome{margin-bottom:11px}.statgrid{grid-template-columns:repeat(3,1fr)}.countbox{border-radius:15px}.btn.full{min-height:46px}}
+@media(max-width:560px){.own-filter{align-items:stretch;flex-direction:column;gap:6px}.own-filter select{width:100%}}</style>
 </head>
 <body>
 <div id="start" class="login">
@@ -64,6 +80,7 @@ input,textarea{font-size:14px}.field{min-width:0}#adminTeamsList .item,#ownList 
   <section id="adminPanel" class="hidden">
    <div class="row between"><h1 style="margin:0">ADMINISTRAÇÃO</h1><button id="adminLogout" class="btn soft" type="button">SAIR</button></div>
    <p class="muted">Cadastre as equipes e defina uma senha para cada uma.</p>
+   <button id="exportCounts" class="btn primary full" type="button" style="margin:4px 0 18px">⇩ EXPORTAR CONTAGEM DAS EQUIPES</button>
    <form id="adminCreateForm"><div class="field"><label>NOME DA EQUIPE</label><input id="adminTeamName" required minlength="2" maxlength="60" placeholder="Ex.: EQUIPE 3"></div><div class="field"><label>SENHA DA EQUIPE</label><input id="adminTeamPassword" type="password" required minlength="6" placeholder="Mínimo de 6 caracteres"></div><button id="adminCreateBtn" class="btn primary full" type="submit">CADASTRAR EQUIPE</button></form>
    <div class="divider">EQUIPES CADASTRADAS</div><div id="adminTeamsList" class="list"></div>
   </section>
@@ -95,7 +112,7 @@ input,textarea{font-size:14px}.field{min-width:0}#adminTeamsList .item,#ownList 
   <section class="panel">
    <button id="toggleOwnList" class="own-list-toggle" type="button" aria-expanded="true"><span>MINHAS CONTAGENS</span><svg id="ownListChevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
    <div id="ownListContent">
-    <div class="own-filter"><label for="ownStatusFilter">FILTRAR POR STATUS</label><select id="ownStatusFilter"><option value="TODOS">TODOS OS STATUS</option><option value="OK">VERDE · CONFERIDO</option><option value="DIVERGENTE">VERMELHO · DIVERGENTE</option><option value="AGUARDANDO">AMARELO · AGUARDANDO</option></select></div>
+    <div class="own-filter"><label for="ownStatusFilter">FILTRAR POR STATUS</label><select id="ownStatusFilter"><option value="TODOS">TODOS</option><option value="OK">CONTAGEM OK</option><option value="DIVERGENTE">DIVERGENTE</option><option value="AGUARDANDO">AGUARDANDO</option></select></div>
     <div id="ownList" class="list"></div>
    </div>
   </section>
@@ -114,6 +131,20 @@ function badge(s){return '<span class="badge '+s+'">'+(s==="OK"?"CONFERIDO":s===
 let adminSession=null;
 function showStart(section){$("start").classList.remove("hidden");$("app").classList.add("hidden");["createPanel","codePanel","adminLoginPanel","adminPanel"].forEach(id=>$(id).classList.add("hidden"));$(section==="create"?"createPanel":section==="code"?"codePanel":section==="adminLogin"?"adminLoginPanel":"adminPanel").classList.remove("hidden")}
 async function adminApi(action,payload={}){const response=await fetch(SUPABASE_URL+"/functions/v1/manage-team",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+adminSession.access_token},body:JSON.stringify({action,...payload})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Falha ao administrar equipes.");return result}
+async function exportCounts(){
+ const btn=$("exportCounts");btn.disabled=true;btn.textContent="PREPARANDO ARQUIVO...";
+ try{
+  const data=await adminApi("export");const teams=data.teams||[],materials=data.materials||[],counts=data.counts||[];
+  if(teams.length!==2)throw new Error("A exportação exige exatamente duas equipes cadastradas. Foram encontradas "+teams.length+".");
+  const byKey=new Map(counts.map(c=>[c.material_id+"|"+c.team_id,c.quantity]));
+  const cell=v=>{const s=String(v??"");return '"' + s.replace(/"/g,'""') + '"'};
+  const rows=[["CÓDIGO","DESCRIÇÃO","UNIDADE",teams[0].name,teams[1].name,"CONTAGEM CONFERIDA"]];
+  materials.forEach(m=>{const a=byKey.get(m.id+"|"+teams[0].id),b=byKey.get(m.id+"|"+teams[1].id);const final=a!==undefined&&a!==null&&b!==undefined&&b!==null&&Number(a)===Number(b)?a:"";rows.push([m.code,m.description,m.unit,a??"",b??"",final])});
+  const csv="\\uFEFF"+rows.map(r=>r.map(cell).join("\\t")).join("\\r\\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download="BALANCO_IMPERIO_CONTAGEM_"+new Date().toISOString().slice(0,10)+".csv";document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);msg("Arquivo CSV exportado com sucesso.");
+ }catch(e){msg(e.message)}finally{btn.disabled=false;btn.textContent="⇩ EXPORTAR CONTAGEM DAS EQUIPES"}
+}
+$("exportCounts").addEventListener("click",exportCounts);
 async function loadAdminTeams(){
  const data=await adminApi("list");
  $("adminTeamsList").innerHTML=(data.teams||[]).map(t=>'<div class="item team-card"><div class="iteminfo"><div class="desc">'+esc(t.name)+'</div><div class="unit">'+(t.active?'EQUIPE ATIVA':'EQUIPE INATIVA')+'</div></div><div class="item-tools"><button class="icon-btn edit" type="button" data-config="'+t.id+'" title="Editar nome ou senha" aria-label="Editar nome ou senha"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button><button class="icon-btn '+(t.active?'toggle':'off')+'" type="button" data-status="'+t.id+'" data-active="'+(!t.active)+'" title="'+(t.active?'Desativar equipe':'Ativar equipe')+'" aria-label="'+(t.active?'Desativar equipe':'Ativar equipe')+'"><svg viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M5.5 5.5a9 9 0 1 0 13 0"/></svg></button><button class="icon-btn delete" type="button" data-delete="'+t.id+'" title="Excluir equipe" aria-label="Excluir equipe"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button></div></div>').join("")||'<div class="empty">Nenhuma equipe cadastrada.</div>';
@@ -153,5 +184,6 @@ $("save").addEventListener("click",async()=>{if(!selected||$("qty").value===""||
 async function deleteCount(id){if(!confirm("Excluir esta contagem?"))return;try{await api("delete",{count_id:id});await loadData();$("chosen").classList.add("hidden");msg("Contagem excluída.")}catch(e){msg(e.message)}}
 $("switchTeam").addEventListener("click",()=>{if(confirm("Deseja sair desta equipe neste aparelho? O código continuará válido para entrar novamente.")){localStorage.removeItem(TOKEN_KEY);accessToken="";team=null;showStart("create")}});
 (async()=>{localStorage.removeItem(TOKEN_KEY);showStart("create")})();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
 </script>
 </body></html>
