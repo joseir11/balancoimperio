@@ -45,8 +45,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 
 .top .brand b{font-size:13px}.top .brand small{display:none}
 .top-actions{display:flex;align-items:center;gap:8px}
 .container{max-width:560px;margin:0 auto;padding:16px 14px calc(28px + env(safe-area-inset-bottom))}
-.welcome{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
-.welcome h2{margin:0;font-size:20px;letter-spacing:-.03em;font-weight:800}
 .status-dot{width:12px;height:12px;border-radius:50%;display:inline-block;flex-shrink:0;box-shadow:0 0 0 3px #0000000a}
 .status-dot.OK{background:var(--green)}.status-dot.AGUARDANDO{background:#eab308}.status-dot.DIVERGENTE{background:var(--red)}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 16px #0f172a08}
@@ -82,14 +80,12 @@ input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 
 .divider{display:flex;align-items:center;gap:10px;margin:18px 0 12px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.08em}
 .divider:before,.divider:after{content:"";height:1px;background:var(--line);flex:1}
 .admin-tools{display:flex;gap:8px;margin:8px 0 16px}
-.team-card .unit{font-size:11px}
 .row{display:flex;align-items:center;gap:8px}.between{justify-content:space-between}
 .accesscode{background:#fff7ed;border:1px solid #fdba74;border-radius:12px;padding:12px;margin:0 0 12px;font:700 12px ui-monospace,monospace;overflow-wrap:anywhere}
 @media(max-width:400px){
   .container{padding:12px 10px calc(24px + env(safe-area-inset-bottom))}
   .panel{padding:14px;border-radius:14px}
   .icon-btn{width:36px;height:36px;min-width:36px}
-  .welcome h2{font-size:18px}
 }
 </style>
 </head>
@@ -151,10 +147,9 @@ input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 
   <div id="teamCodeBox" class="accesscode hidden">
    <div class="row between">
     <span id="teamCodeText"></span>
-    <button id="copyTeamCode" class="icon-btn dark" type="button" title="Copiar" aria-label="Copiar" style="background:var(--navy);color:#fff"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+    <button id="copyTeamCode" class="icon-btn" type="button" title="Copiar" aria-label="Copiar" style="background:var(--navy);color:#fff"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
    </div>
   </div>
-
   <section class="panel">
    <div class="searchbox">
     <span class="search-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
@@ -175,7 +170,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 
     <button id="save" class="btn primary full" type="button" style="margin-top:12px"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Salvar</button>
    </div>
   </section>
-
   <section class="panel">
    <div class="row between">
     <button id="toggleOwnList" class="own-list-toggle" type="button" aria-expanded="true">
@@ -201,4 +195,5 @@ input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 
 <div id="toast" class="toast hidden"></div>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="./app.js"></script>
+<script src="./app2.js"></script>
 </body></html>
