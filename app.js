@@ -71,14 +71,21 @@ async function prepareShareFile(showMessage=false){
 async function shareExcelFile(){
  const button=$("shareCounts");
  if(button)button.disabled=true;
+ let stage="iniciar o compartilhamento";
+ let whatsappWindow=null;
  try{
+  // ABRE A ABA NO CLIQUE ORIGINAL PARA EVITAR BLOQUEIO APOS O ENVIO ASSINCRONO.
+  whatsappWindow=window.open("about:blank","_blank");
+  stage="gerar a planilha";
   const file=await buildExcelFile();
+  stage="preparar o arquivo";
   const buffer=await file.arrayBuffer();
   const bytes=new Uint8Array(buffer);
   let binary="";
   const chunk=0x8000;
   for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,i+chunk));
   const fileBase64=btoa(binary);
+  stage="enviar a planilha ao servidor";
   const response=await fetch(SUPABASE_URL+"/functions/v1/share-counts",{
    method:"POST",
    headers:{
@@ -93,9 +100,13 @@ async function shareExcelFile(){
   const link=result.url.startsWith("http")?result.url:SUPABASE_URL+result.url;
   const expires=new Date(result.expires_at).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
   const message="BALANCO IMPERIO - Planilha de contagem atualizada.\n\nBaixe o Excel pelo link abaixo (válido até "+expires+"):\n"+link;
-  window.location.href="https://wa.me/?text="+encodeURIComponent(message);
+  stage="abrir o WhatsApp";
+  const whatsappUrl="https://wa.me/?text="+encodeURIComponent(message);
+  if(whatsappWindow&&!whatsappWindow.closed)whatsappWindow.location.href=whatsappUrl;
+  else window.location.href=whatsappUrl;
  }catch(e){
-  msg(e.message||"Nao foi possivel compartilhar a planilha.");
+  if(whatsappWindow&&!whatsappWindow.closed)whatsappWindow.close();
+  msg("Falha ao "+stage+": "+(e&&e.message?e.message:String(e)));
  }finally{
   if(button)button.disabled=false;
  }
