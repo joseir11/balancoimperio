@@ -134,14 +134,20 @@ async function adminApi(action,payload={}){const response=await fetch(SUPABASE_U
 async function exportCounts(){
  const btn=$("exportCounts");btn.disabled=true;btn.textContent="PREPARANDO ARQUIVO...";
  try{
-  const data=await adminApi("export");const teams=data.teams||[],materials=data.materials||[],counts=data.counts||[];
-  if(teams.length!==2)throw new Error("A exportação exige exatamente duas equipes cadastradas. Foram encontradas "+teams.length+".");
+  const data=await adminApi("export");const allTeams=data.teams||[],materials=data.materials||[],counts=data.counts||[];
+  const teams=allTeams.filter(t=>counts.some(c=>c.team_id===t.id));
+  if(!teams.length)throw new Error("Ainda não existem contagens registradas pelas equipes.");
   const byKey=new Map(counts.map(c=>[c.material_id+"|"+c.team_id,c.quantity]));
-  const cell=v=>{const s=String(v??"");return '"' + s.replace(/"/g,'""') + '"'};
-  const rows=[["CÓDIGO","DESCRIÇÃO","UNIDADE",teams[0].name,teams[1].name,"CONTAGEM CONFERIDA"]];
-  materials.forEach(m=>{const a=byKey.get(m.id+"|"+teams[0].id),b=byKey.get(m.id+"|"+teams[1].id);const final=a!==undefined&&a!==null&&b!==undefined&&b!==null&&Number(a)===Number(b)?a:"";rows.push([m.code,m.description,m.unit,a??"",b??"",final])});
-  const csv="\uFEFF"+rows.map(r=>r.map(cell).join("\t")).join("\r\n");
-  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download="BALANCO_IMPERIO_CONTAGEM_"+new Date().toISOString().slice(0,10)+".csv";document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);msg("Arquivo CSV exportado com sucesso.");
+  const cell=v=>{const s=String(v??"");return '"'+s.replace(/"/g,'""')+'"'}; 
+  const rows=[["CÓDIGO","DESCRIÇÃO","UNIDADE",...teams.map(t=>t.name),"CONTAGEM CONFERIDA"]];
+  materials.forEach(m=>{
+   const values=teams.map(t=>byKey.get(m.id+"|"+t.id));
+   const complete=values.every(v=>v!==undefined&&v!==null);
+   const equal=complete&&values.every(v=>Number(v)===Number(values[0]));
+   rows.push([m.code,m.description,m.unit,...values.map(v=>v??""),equal?values[0]:""]);
+  });
+  const csv="\\uFEFF"+rows.map(r=>r.map(cell).join("\\t")).join("\\r\\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download="BALANCO_IMPERIO_CONTAGEM_"+new Date().toISOString().slice(0,10)+".csv";document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);msg("Arquivo CSV exportado com "+teams.length+" equipe(s).");
  }catch(e){msg(e.message)}finally{btn.disabled=false;btn.textContent="⇩ EXPORTAR CONTAGEM DAS EQUIPES"}
 }
 $("exportCounts").addEventListener("click",exportCounts);
