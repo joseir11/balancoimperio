@@ -19,7 +19,7 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}.hidden{display:
 .login{min-height:100svh;display:grid;place-items:center;padding:20px;background:linear-gradient(160deg,#0b1220,#1e293b 60%)}
 .loginbox{width:min(100%,380px);background:var(--card);padding:28px 24px;border-radius:20px;box-shadow:0 24px 60px #0005}
 .brand{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-.logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#ffb65d,var(--orange));display:grid;place-items:center;color:#fff;font-weight:900;font-size:18px;flex-shrink:0}
+.logo{width:44px;height:44px;display:block;object-fit:contain;flex-shrink:0}
 .brand b{display:block;font-size:15px;letter-spacing:.04em}.brand small{color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.12em}
 h1{font-size:22px;margin:20px 0 6px;letter-spacing:-.03em}
 .muted{color:var(--muted)}.small{font-size:12px}
@@ -107,7 +107,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 
 <body>
 <div id="start" class="login">
  <div class="loginbox">
-  <div class="brand"><div class="logo">BI</div><div><b>BALANCO IMPERIO</b><small>INVENTARIO</small></div></div>
+  <div class="brand"><img class="logo" src="./img/LOGO_IMPERIO.png" alt="Logo Império"><div><b>BALANCO IMPERIO</b><small>INVENTARIO</small></div></div>
   <section id="createPanel">
    <h1>Acesso</h1>
    <div class="access-choice">
@@ -162,7 +162,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 
 
 <div id="app" class="hidden">
  <header class="top">
-  <div class="brand"><div class="logo">BI</div><div><b id="teamTitle">Equipe</b></div></div>
+  <div class="brand"><img class="logo" src="./img/LOGO_IMPERIO.png" alt="Logo Império"><div><b id="teamTitle">Equipe</b></div></div>
   <div class="top-actions">
    <span id="connection" class="status-dot AGUARDANDO" title="Conectando"></span>
    <button id="switchTeam" class="icon-btn" type="button" title="Trocar equipe" aria-label="Trocar equipe" style="background:#1e293b;color:#cbd5e1"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></button>
